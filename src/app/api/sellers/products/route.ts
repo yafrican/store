@@ -1,4 +1,4 @@
-// src/app/api/sellers/products/route.ts - COMPLETELY FIXED
+// src/app/api/sellers/products/route.ts - COMPLETELY FIXED WITH SPECIFICATIONS
 import { NextResponse } from "next/server"
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose"
@@ -50,26 +50,38 @@ export async function GET(req: Request) {
       // ✅ FIX: Normalize category to uppercase for consistency
       const normalizedCategory = product.category ? product.category.toUpperCase() : 'UNCATEGORIZED'
 
+      // ✅ FIXED: Ensure specifications is always an object
+      const safeSpecifications = product.specifications && typeof product.specifications === 'object' 
+        ? product.specifications 
+        : {}
+
       return {
         _id: product._id,
         name: product.name,
         price: product.price,
         originalPrice: product.originalPrice || product.price,
-        category: normalizedCategory, // ✅ Normalized category
+        category: normalizedCategory,
         subcategory: product.subcategory || '',
         images: product.images || [],
         description: product.description || '',
         status: product.status || 'pending',
-        inStock: isInStock, // ✅ Properly calculated stock status
+        inStock: isInStock,
         stock: product.stock || 0,
         seller: product.seller,
+        // ✅ FIXED: Include specifications in response with safe default
+        specifications: safeSpecifications,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt
       }
     })
 
     console.log('📦 Formatted products response:', formattedProducts.length, 'products')
-    console.log('📦 Sample product:', formattedProducts[0] || 'No products')
+    console.log('📦 Sample product with specs:', formattedProducts[0] ? {
+      name: formattedProducts[0].name,
+      category: formattedProducts[0].category,
+      specifications: formattedProducts[0].specifications,
+      specCount: Object.keys(formattedProducts[0].specifications).length
+    } : 'No products')
 
     return NextResponse.json({ 
       success: true, 
@@ -86,7 +98,7 @@ export async function GET(req: Request) {
   }
 }
 
-// POST create new product - COMPLETELY FIXED
+// POST create new product - COMPLETELY FIXED WITH SPECIFICATIONS
 export async function POST(req: Request) {
   try {
     const payload = verifyToken(req)
@@ -95,7 +107,13 @@ export async function POST(req: Request) {
     console.log('🔍 Seller ID:', payload.id)
 
     const data = await req.json()
-    console.log('🔄 Creating product with data:', data)
+    console.log('🔄 Creating product with data:', {
+      name: data.name,
+      category: data.category,
+      specifications: data.specifications,
+      hasSpecifications: !!data.specifications,
+      specCount: data.specifications ? Object.keys(data.specifications).length : 0
+    })
 
     // ✅ FIX: Enhanced validation
     if (!data.name?.trim()) {
@@ -128,27 +146,43 @@ export async function POST(req: Request) {
       }, { status: 400 })
     }
 
-    // ✅ FIX: Create product with ALL required fields and proper defaults
+    // ✅ FIXED: Ensure specifications is a proper object
+    const safeSpecifications = data.specifications && typeof data.specifications === 'object' 
+      ? data.specifications 
+      : {}
+
+    // ✅ FIX: Create product with ALL required fields and proper defaults INCLUDING SPECIFICATIONS
     const productData = {
       name: data.name.trim(),
       price: parseFloat(data.price),
       originalPrice: data.originalPrice ? parseFloat(data.originalPrice) : parseFloat(data.price),
-      category: data.category.trim().toUpperCase(), // ✅ Normalize to uppercase
+      category: data.category.trim().toUpperCase(),
       subcategory: data.subcategory ? data.subcategory.trim() : "",
       images: Array.isArray(data.images) ? data.images : [],
       description: data.description ? data.description.trim() : "",
       seller: new mongoose.Types.ObjectId(payload.id),
       status: 'pending',
-      inStock: stock > 0, // ✅ Auto-set inStock based on stock quantity
-      stock: stock
+      inStock: stock > 0,
+      stock: stock,
+      // ✅ FIXED: Save specifications to database with proper object
+      specifications: safeSpecifications
     }
 
-    console.log('📦 Final product data to save:', productData)
+    console.log('📦 Final product data to save:', {
+      ...productData,
+      specifications: productData.specifications,
+      specCount: Object.keys(productData.specifications).length
+    })
 
     // ✅ FIX: Use create() for better error handling
     const product = await Product.create(productData)
 
-    console.log('✅ Product saved successfully:', {
+    // ✅ FIXED: Safe handling of created product specifications
+    const createdSpecifications = product.specifications && typeof product.specifications === 'object' 
+      ? product.specifications 
+      : {}
+
+    console.log('✅ Product saved successfully with specifications:', {
       _id: product._id,
       name: product.name,
       price: product.price,
@@ -157,16 +191,18 @@ export async function POST(req: Request) {
       status: product.status,
       inStock: product.inStock,
       stock: product.stock,
-      seller: product.seller
+      seller: product.seller,
+      specifications: createdSpecifications,
+      specCount: Object.keys(createdSpecifications).length
     })
 
-    // ✅ FIX: Return complete product data with normalized category
+    // ✅ FIX: Return complete product data with normalized category AND specifications
     const formattedProduct = {
       _id: product._id,
       name: product.name,
       price: product.price,
       originalPrice: product.originalPrice,
-      category: product.category.toUpperCase(), // ✅ Ensure uppercase in response
+      category: product.category.toUpperCase(),
       subcategory: product.subcategory,
       images: product.images,
       description: product.description,
@@ -174,6 +210,8 @@ export async function POST(req: Request) {
       inStock: product.inStock,
       stock: product.stock,
       seller: product.seller,
+      // ✅ FIXED: Include specifications in response with safe default
+      specifications: createdSpecifications,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt
     }
@@ -209,7 +247,7 @@ export async function POST(req: Request) {
   }
 }
 
-// PATCH update product stock - ADD THIS METHOD
+// PATCH update product stock - COMPLETELY FIXED WITH SPECIFICATIONS
 export async function PATCH(req: Request) {
   try {
     const payload = verifyToken(req)
@@ -259,7 +297,19 @@ export async function PATCH(req: Request) {
       { new: true, runValidators: true }
     )
 
-    // ✅ FIX: Return normalized product data
+    if (!updatedProduct) {
+      return NextResponse.json({
+        success: false,
+        error: "Failed to update product"
+      }, { status: 500 })
+    }
+
+    // ✅ FIXED: Safe handling of specifications
+    const safeSpecifications = updatedProduct.specifications && typeof updatedProduct.specifications === 'object' 
+      ? updatedProduct.specifications 
+      : {}
+
+    // ✅ FIX: Return normalized product data WITH SPECIFICATIONS
     const formattedProduct = {
       _id: updatedProduct._id,
       name: updatedProduct.name,
@@ -273,6 +323,8 @@ export async function PATCH(req: Request) {
       inStock: updatedProduct.inStock,
       stock: updatedProduct.stock,
       seller: updatedProduct.seller,
+      // ✅ FIXED: Include specifications in response with safe default
+      specifications: safeSpecifications,
       createdAt: updatedProduct.createdAt,
       updatedAt: updatedProduct.updatedAt
     }
@@ -291,3 +343,341 @@ export async function PATCH(req: Request) {
     }, { status: 500 })
   }
 }
+
+// DELETE product - ADD THIS METHOD FOR COMPLETENESS
+export async function DELETE(req: Request) {
+  try {
+    const payload = verifyToken(req)
+    await connectMongo()
+
+    const url = new URL(req.url)
+    const productId = url.searchParams.get('id')
+
+    if (!productId) {
+      return NextResponse.json({
+        success: false,
+        error: "Product ID is required"
+      }, { status: 400 })
+    }
+
+    // ✅ FIX: Find product by seller to ensure ownership
+    const product = await Product.findOne({ 
+      _id: productId, 
+      seller: payload.id 
+    })
+
+    if (!product) {
+      return NextResponse.json({
+        success: false,
+        error: "Product not found or access denied"
+      }, { status: 404 })
+    }
+
+    await Product.findByIdAndDelete(productId)
+
+    return NextResponse.json({
+      success: true,
+      message: "Product deleted successfully"
+    })
+
+  } catch (error: any) {
+    console.error("❌ Product deletion error:", error)
+    return NextResponse.json({
+      success: false,
+      error: error.message || "Internal server error"
+    }, { status: 500 })
+  }
+}
+// // src/app/api/sellers/products/route.ts - COMPLETELY FIXED
+// import { NextResponse } from "next/server"
+// import jwt from "jsonwebtoken"
+// import mongoose from "mongoose"
+// import connectMongo from "@/lib/mongodb"
+// import Product from "@/models/Product"
+
+// const JWT_SECRET = process.env.JWT_SECRET!
+
+// function verifyToken(req: Request) {
+//   const cookieHeader = req.headers.get("cookie") || ""
+//   const match = cookieHeader.match(/token=([^;]+)/)
+//   const token = match ? match[1] : null
+
+//   if (!token) throw new Error("Not authenticated")
+  
+//   const payload = jwt.verify(token, JWT_SECRET) as { id: string; role: string }
+//   if (payload.role !== "seller") throw new Error("Access denied")
+  
+//   return payload
+// }
+
+// // GET seller products with status filtering - COMPLETELY FIXED
+// export async function GET(req: Request) {
+//   try {
+//     const payload = verifyToken(req)
+//     await connectMongo()
+
+//     // Get query parameters for filtering
+//     const url = new URL(req.url)
+//     const status = url.searchParams.get('status')
+    
+//     let query: any = { seller: payload.id }
+    
+//     // If status specified, filter by status
+//     if (status) {
+//       query.status = status
+//     }
+
+//     console.log('🔍 Fetching seller products with query:', query)
+
+//     const products = await Product.find(query).sort({ createdAt: -1 })
+
+//     // ✅ FIXED: Enhanced product formatting with proper stock logic
+//     const formattedProducts = products.map(product => {
+//       // ✅ FIX: Calculate inStock based on both inStock field AND stock quantity
+//       const hasStock = product.stock > 0
+//       const isInStock = product.inStock !== undefined ? product.inStock && hasStock : hasStock
+      
+//       // ✅ FIX: Normalize category to uppercase for consistency
+//       const normalizedCategory = product.category ? product.category.toUpperCase() : 'UNCATEGORIZED'
+
+//       return {
+//         _id: product._id,
+//         name: product.name,
+//         price: product.price,
+//         originalPrice: product.originalPrice || product.price,
+//         category: normalizedCategory, // ✅ Normalized category
+//         subcategory: product.subcategory || '',
+//         images: product.images || [],
+//         description: product.description || '',
+//         status: product.status || 'pending',
+//         inStock: isInStock, // ✅ Properly calculated stock status
+//         stock: product.stock || 0,
+//         seller: product.seller,
+//         createdAt: product.createdAt,
+//         updatedAt: product.updatedAt
+//       }
+//     })
+
+//     console.log('📦 Formatted products response:', formattedProducts.length, 'products')
+//     console.log('📦 Sample product:', formattedProducts[0] || 'No products')
+
+//     return NextResponse.json({ 
+//       success: true, 
+//       products: formattedProducts
+//     })
+//   } catch (error: any) {
+//     console.error("Products fetch error:", error)
+//     return NextResponse.json({ 
+//       error: error.message || "Server error" 
+//     }, { 
+//       status: error.message === "Not authenticated" ? 401 : 
+//             error.message === "Access denied" ? 403 : 500 
+//     })
+//   }
+// }
+
+// // POST create new product - COMPLETELY FIXED
+// export async function POST(req: Request) {
+//   try {
+//     const payload = verifyToken(req)
+//     await connectMongo()
+
+//     console.log('🔍 Seller ID:', payload.id)
+
+//     const data = await req.json()
+//     console.log('🔄 Creating product with data:', data)
+
+//     // ✅ FIX: Enhanced validation
+//     if (!data.name?.trim()) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Product name is required"
+//       }, { status: 400 })
+//     }
+
+//     if (!data.price || isNaN(parseFloat(data.price)) || parseFloat(data.price) <= 0) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Valid price is required"
+//       }, { status: 400 })
+//     }
+
+//     if (!data.category?.trim()) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Category is required"
+//       }, { status: 400 })
+//     }
+
+//     // ✅ FIX: Validate stock
+//     const stock = data.stock ? parseInt(data.stock) : 1
+//     if (stock < 0) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Stock cannot be negative"
+//       }, { status: 400 })
+//     }
+
+//     // ✅ FIX: Create product with ALL required fields and proper defaults
+//     const productData = {
+//       name: data.name.trim(),
+//       price: parseFloat(data.price),
+//       originalPrice: data.originalPrice ? parseFloat(data.originalPrice) : parseFloat(data.price),
+//       category: data.category.trim().toUpperCase(), // ✅ Normalize to uppercase
+//       subcategory: data.subcategory ? data.subcategory.trim() : "",
+//       images: Array.isArray(data.images) ? data.images : [],
+//       description: data.description ? data.description.trim() : "",
+//       seller: new mongoose.Types.ObjectId(payload.id),
+//       status: 'pending',
+//       inStock: stock > 0, // ✅ Auto-set inStock based on stock quantity
+//       stock: stock
+//     }
+
+//     console.log('📦 Final product data to save:', productData)
+
+//     // ✅ FIX: Use create() for better error handling
+//     const product = await Product.create(productData)
+
+//     console.log('✅ Product saved successfully:', {
+//       _id: product._id,
+//       name: product.name,
+//       price: product.price,
+//       originalPrice: product.originalPrice,
+//       category: product.category,
+//       status: product.status,
+//       inStock: product.inStock,
+//       stock: product.stock,
+//       seller: product.seller
+//     })
+
+//     // ✅ FIX: Return complete product data with normalized category
+//     const formattedProduct = {
+//       _id: product._id,
+//       name: product.name,
+//       price: product.price,
+//       originalPrice: product.originalPrice,
+//       category: product.category.toUpperCase(), // ✅ Ensure uppercase in response
+//       subcategory: product.subcategory,
+//       images: product.images,
+//       description: product.description,
+//       status: product.status,
+//       inStock: product.inStock,
+//       stock: product.stock,
+//       seller: product.seller,
+//       createdAt: product.createdAt,
+//       updatedAt: product.updatedAt
+//     }
+
+//     return NextResponse.json({
+//       success: true,
+//       product: formattedProduct,
+//       message: "Product created successfully! It is now pending admin approval."
+//     }, { status: 201 })
+
+//   } catch (error: any) {
+//     console.error("❌ Product creation error:", error)
+    
+//     if (error.code === 11000) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Product with this name already exists"
+//       }, { status: 400 })
+//     }
+    
+//     if (error.name === 'ValidationError') {
+//       const errors = Object.values(error.errors).map((err: any) => err.message)
+//       return NextResponse.json({
+//         success: false,
+//         error: errors.join(', ')
+//       }, { status: 400 })
+//     }
+
+//     return NextResponse.json({
+//       success: false,
+//       error: error.message || "Internal server error"
+//     }, { status: 500 })
+//   }
+// }
+
+// // PATCH update product stock - ADD THIS METHOD
+// export async function PATCH(req: Request) {
+//   try {
+//     const payload = verifyToken(req)
+//     await connectMongo()
+
+//     const { productId, inStock, stock } = await req.json()
+
+//     if (!productId) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Product ID is required"
+//       }, { status: 400 })
+//     }
+
+//     // ✅ FIX: Find product by seller to ensure ownership
+//     const product = await Product.findOne({ 
+//       _id: productId, 
+//       seller: payload.id 
+//     })
+
+//     if (!product) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Product not found or access denied"
+//       }, { status: 404 })
+//     }
+
+//     // ✅ FIX: Update fields
+//     const updateData: any = { updatedAt: new Date() }
+    
+//     if (inStock !== undefined) {
+//       updateData.inStock = Boolean(inStock)
+//     }
+    
+//     if (stock !== undefined) {
+//       const stockValue = parseInt(stock)
+//       updateData.stock = stockValue
+//       // Auto-update inStock based on stock quantity if not explicitly set
+//       if (inStock === undefined) {
+//         updateData.inStock = stockValue > 0
+//       }
+//     }
+
+//     const updatedProduct = await Product.findByIdAndUpdate(
+//       productId,
+//       updateData,
+//       { new: true, runValidators: true }
+//     )
+
+//     // ✅ FIX: Return normalized product data
+//     const formattedProduct = {
+//       _id: updatedProduct._id,
+//       name: updatedProduct.name,
+//       price: updatedProduct.price,
+//       originalPrice: updatedProduct.originalPrice,
+//       category: updatedProduct.category.toUpperCase(),
+//       subcategory: updatedProduct.subcategory,
+//       images: updatedProduct.images,
+//       description: updatedProduct.description,
+//       status: updatedProduct.status,
+//       inStock: updatedProduct.inStock,
+//       stock: updatedProduct.stock,
+//       seller: updatedProduct.seller,
+//       createdAt: updatedProduct.createdAt,
+//       updatedAt: updatedProduct.updatedAt
+//     }
+
+//     return NextResponse.json({
+//       success: true,
+//       product: formattedProduct,
+//       message: "Product updated successfully"
+//     })
+
+//   } catch (error: any) {
+//     console.error("❌ Product update error:", error)
+//     return NextResponse.json({
+//       success: false,
+//       error: error.message || "Internal server error"
+//     }, { status: 500 })
+//   }
+// }

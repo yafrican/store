@@ -3,7 +3,8 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { ArrowLeft, Upload, X, Plus, Calculator } from 'lucide-react'
+import { ArrowLeft, Upload, X, Plus, Calculator, ChevronDown, ChevronUp } from 'lucide-react'
+import { getCategoryConfig } from '@/lib/categories'
 
 interface ProductFormData {
   name: string
@@ -14,6 +15,9 @@ interface ProductFormData {
   description: string
   stock: string
   images: string[]
+  specifications: {
+    [key: string]: string | number | boolean
+  }
 }
 
 export default function CreateProductPage() {
@@ -21,6 +25,7 @@ export default function CreateProductPage() {
   const [loading, setLoading] = useState(false)
   const [imageFiles, setImageFiles] = useState<File[]>([])
   const [imagePreviews, setImagePreviews] = useState<string[]>([])
+  const [specsSectionOpen, setSpecsSectionOpen] = useState(false)
 
   const [formData, setFormData] = useState<ProductFormData>({
     name: '',
@@ -30,7 +35,8 @@ export default function CreateProductPage() {
     subcategory: '',
     description: '',
     stock: '1',
-    images: []
+    images: [],
+    specifications: {}
   })
 
   const categories = [
@@ -59,12 +65,25 @@ export default function CreateProductPage() {
     'Food & Beverages': ['Snacks', 'Beverages', 'Cooking', 'Organic', 'International']
   }
 
+// Update this line in your CreateProductPage component
+const categoryConfig = formData.category ? getCategoryConfig(formData.category, formData.subcategory) : null
   // Clean up object URLs on unmount
   useEffect(() => {
     return () => {
       imagePreviews.forEach(url => URL.revokeObjectURL(url))
     }
   }, [imagePreviews])
+
+  // Reset specifications when category changes
+  useEffect(() => {
+    if (formData.category) {
+      setFormData(prev => ({
+        ...prev,
+        specifications: {}
+      }))
+      setSpecsSectionOpen(true)
+    }
+  }, [formData.category])
 
   // Form validation
   const validateForm = (): string | null => {
@@ -89,6 +108,18 @@ export default function CreateProductPage() {
     if (!formData.stock || parseInt(formData.stock) < 0) {
       return 'Valid stock quantity is required'
     }
+
+    // Validate required specifications
+    if (categoryConfig) {
+      const missingRequired = categoryConfig.specifications
+        .filter(spec => spec.required && !formData.specifications[spec.fieldName])
+        .map(spec => spec.label)
+
+      if (missingRequired.length > 0) {
+        return `Please fill in required specifications: ${missingRequired.join(', ')}`
+      }
+    }
+
     return null
   }
 
@@ -96,7 +127,7 @@ export default function CreateProductPage() {
   const calculateFinalPrice = (basePrice: string): string => {
     if (!basePrice || isNaN(parseFloat(basePrice))) return ''
     const price = parseFloat(basePrice)
-    const finalPrice = price + (price * 0.10) // 10% markup
+    const finalPrice = price + (price * 0.10)
     return finalPrice.toFixed(2)
   }
 
@@ -133,19 +164,36 @@ export default function CreateProductPage() {
     setImageFiles(newFiles)
     setImagePreviews(newPreviews)
     
-    // Revoke the object URL to avoid memory leaks
     URL.revokeObjectURL(imagePreviews[index])
   }
 
-  // Upload images using your API route (Recommended approach)
+  // Handle basic form input changes
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target
+    
+    if (name !== 'originalPrice') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }))
+    }
+  }
+
+  // Handle specification changes
+  const handleSpecificationChange = (fieldName: string, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      specifications: {
+        ...prev.specifications,
+        [fieldName]: value
+      }
+    }))
+  }
+
+  // Upload images using your API route
   const uploadImagesToAPI = async (files: File[]): Promise<string[]> => {
     try {
       console.log('📤 Starting upload via API...')
-      console.log('📤 File details:', files.map(f => ({
-        name: f.name,
-        type: f.type,
-        size: f.size
-      })))
       
       const uploadFormData = new FormData()
       files.forEach(file => {
@@ -182,7 +230,7 @@ export default function CreateProductPage() {
     }
   }
 
-  // Fallback: Upload images to Cloudinary using direct API call
+  // Fallback: Upload images to Cloudinary
   const uploadImagesToCloudinary = async (files: File[]): Promise<string[]> => {
     try {
       console.log('📤 Starting Cloudinary direct upload...')
@@ -190,7 +238,6 @@ export default function CreateProductPage() {
 
       for (const file of files) {
         try {
-          // Validate file type
           if (!file.type.startsWith('image/')) {
             throw new Error(`File ${file.name} is not an image`)
           }
@@ -234,7 +281,6 @@ export default function CreateProductPage() {
 
     } catch (error) {
       console.error('❌ Cloudinary upload error:', error)
-      // Final fallback to placeholder images
       const placeholderUrls = files.map((_, index) => 
         `https://via.placeholder.com/400x400/007bff/ffffff?text=Product+${index + 1}`
       )
@@ -247,7 +293,6 @@ export default function CreateProductPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Validate form
     const validationError = validateForm()
     if (validationError) {
       alert(validationError)
@@ -257,12 +302,12 @@ export default function CreateProductPage() {
     setLoading(true)
 
     try {
-      // Step 1: Upload images using API route (with fallback)
+      // Step 1: Upload images
       console.log('📤 Uploading images...')
       const imageUrls = await uploadImagesToAPI(imageFiles)
       console.log('✅ Images uploaded successfully:', imageUrls)
 
-      // Prepare product data
+      // Prepare product data with specifications
       const productData = {
         name: formData.name.trim(),
         price: parseFloat(formData.price),
@@ -273,7 +318,8 @@ export default function CreateProductPage() {
         description: formData.description.trim(),
         stock: parseInt(formData.stock) || 1,
         inStock: parseInt(formData.stock) > 0,
-        status: 'pending'
+        status: 'pending',
+        specifications: formData.specifications
       }
 
       console.log('📦 Sending product data to API:', productData)
@@ -301,24 +347,9 @@ export default function CreateProductPage() {
 
       if (result.success) {
         console.log('✅ Product created successfully:', result.product)
-        
-        // Verify the saved product
-        if (result.product) {
-          console.log('🔍 Saved product verification:', {
-            name: result.product.name,
-            price: result.product.price,
-            originalPrice: result.product.originalPrice,
-            category: result.product.category,
-            status: result.product.status,
-            inStock: result.product.inStock,
-            stock: result.product.stock
-          })
-        }
-        
         alert('Product created successfully! Awaiting admin approval.')
         router.push('/seller/dashboard')
       } else {
-        console.error('❌ Product creation failed:', result)
         throw new Error(result.error || result.message || 'Failed to create product')
       }
 
@@ -327,17 +358,6 @@ export default function CreateProductPage() {
       alert(error instanceof Error ? error.message : 'Failed to create product. Please check console for details.')
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value } = e.target
-    
-    if (name !== 'originalPrice') {
-      setFormData(prev => ({
-        ...prev,
-        [name]: value
-      }))
     }
   }
 
@@ -396,7 +416,7 @@ export default function CreateProductPage() {
                   {/* Original Price Input */}
                   <div>
                     <label htmlFor="originalPrice" className="block text-sm font-medium text-gray-700 mb-2">
-                      Your Price ($) *
+                      Your Price (Birr) *
                     </label>
                     <input
                       type="number"
@@ -420,10 +440,10 @@ export default function CreateProductPage() {
                       <Calculator className="w-4 h-4 text-blue-600" />
                     </div>
                     <div className="text-2xl font-bold text-blue-700">
-                      ${formData.price || '0.00'}
+                      Birr{formData.price || '0.00'}
                     </div>
                     <div className="text-xs text-blue-600 mt-1">
-                      Includes 10% platform fee (${profit} profit)
+                      Includes 10% platform fee (Birr{profit} profit)
                     </div>
                     {formData.originalPrice && (
                       <div className="text-xs text-green-600 mt-1">
@@ -511,6 +531,101 @@ export default function CreateProductPage() {
               />
             </div>
 
+            {/* Dynamic Specifications Section */}
+
+{/* Dynamic Specifications Section */}
+{categoryConfig && (
+  <div className="border border-gray-200 rounded-lg">
+    <button
+      type="button"
+      onClick={() => setSpecsSectionOpen(!specsSectionOpen)}
+      className="w-full flex items-center justify-between p-6 text-left"
+    >
+      <div>
+        <h2 className="text-xl font-semibold text-gray-900">
+          {categoryConfig.name} Specifications
+        </h2>
+        <p className="text-sm text-gray-600 mt-1">
+          Add detailed specifications for your product
+        </p>
+      </div>
+      {specsSectionOpen ? (
+        <ChevronUp className="w-5 h-5 text-gray-500" />
+      ) : (
+        <ChevronDown className="w-5 h-5 text-gray-500" />
+      )}
+    </button>
+
+    {specsSectionOpen && (
+      <div className="px-6 pb-6 border-t border-gray-200">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {categoryConfig.specifications.map((spec) => (
+            <div key={spec.fieldName}>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                {spec.label} {spec.required && '*'}
+              </label>
+              
+              {spec.type === 'select' ? (
+                <select
+                  value={formData.specifications[spec.fieldName] as string || ''}
+                  onChange={(e) => handleSpecificationChange(spec.fieldName, e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required={spec.required}
+                >
+                  <option value="">Select {spec.label}</option>
+                  {spec.options?.map(option => (
+                    <option key={option} value={option}>
+                      {option}
+                      {/* Show ad counts for screen sizes like Jiji */}
+                      {spec.fieldName === 'screenSize' && (
+                        <>{option === '< 5"' && ' • 434 ads'}
+                         {option === '5.1 - 5.5"' && ' • 626 ads'}
+                         {option === '5.6 - 6"' && ' • 895 ads'}
+                         {option === '6.1 - 6.5"' && ' • 7,851 ads'}
+                         {option === '6.6 - 6.8"' && ' • 8,698 ads'}
+                         {option === '> 6.8"' && ' • 1,090 ads'}</>
+                      )}
+                    </option>
+                  ))}
+                </select>
+              ) : spec.type === 'number' ? (
+                <div className="flex items-center">
+                  <input
+                    type="number"
+                    value={formData.specifications[spec.fieldName] as string || ''}
+                    onChange={(e) => handleSpecificationChange(spec.fieldName, e.target.value)}
+                    min={spec.min}
+                    max={spec.max}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    required={spec.required}
+                  />
+                  {spec.unit && (
+                    <span className="ml-2 text-sm text-gray-500 whitespace-nowrap">
+                      {spec.unit}
+                    </span>
+                  )}
+                </div>
+              ) : (
+                <input
+                  type="text"
+                  value={formData.specifications[spec.fieldName] as string || ''}
+                  onChange={(e) => handleSpecificationChange(spec.fieldName, e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  required={spec.required}
+                  placeholder={`Enter ${spec.label.toLowerCase()}`}
+                />
+              )}
+              
+              {spec.unit && spec.type !== 'number' && (
+                <span className="text-sm text-gray-500 ml-2">{spec.unit}</span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+  </div>
+)}
             {/* Image Upload */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -567,19 +682,19 @@ export default function CreateProductPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
                     <div className="text-gray-600 mb-1">Your Price</div>
-                    <div className="text-2xl font-bold text-gray-900">${parseFloat(formData.originalPrice).toFixed(2)}</div>
+                    <div className="text-2xl font-bold text-gray-900">Birr{parseFloat(formData.originalPrice).toFixed(2)}</div>
                   </div>
                   <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
                     <div className="text-gray-600 mb-1">Platform Fee (10%)</div>
-                    <div className="text-2xl font-bold text-yellow-600">${profit}</div>
+                    <div className="text-2xl font-bold text-yellow-600">Birr{profit}</div>
                   </div>
                   <div className="text-center p-4 bg-green-50 border border-green-200 rounded-lg">
                     <div className="text-gray-600 mb-1">Final Price</div>
-                    <div className="text-2xl font-bold text-green-700">${formData.price}</div>
+                    <div className="text-2xl font-bold text-green-700">Birr{formData.price}</div>
                   </div>
                 </div>
                 <div className="mt-4 text-center text-sm text-gray-600">
-                  Customers will see the final price of <strong>${formData.price}</strong>
+                  Customers will see the final price of <strong>Birr{formData.price}</strong>
                 </div>
               </div>
             )}

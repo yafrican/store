@@ -4,6 +4,9 @@
 import { useState } from 'react'
 import { useCart } from '../app/contexts/CartContext'
 import { DocumentDuplicateIcon, CheckIcon } from '@heroicons/react/24/outline'
+import { ReceiptGenerator } from '../utils/receiptGenerator'
+import ReceiptDisplay from './ReceiptDisplay'
+import { ManualPaymentReceipt, TelebirrReceipt, CustomerInfo, Receipt } from '../types/receipt'
 
 interface BankDetails {
   id: string
@@ -75,6 +78,10 @@ export default function Checkout() {
     email: '',
     address: ''
   })
+  const [generatedReceipt, setGeneratedReceipt] = useState<ManualPaymentReceipt | TelebirrReceipt | null>(null)
+  const [showReceipt, setShowReceipt] = useState(false)
+
+  const receiptGenerator = new ReceiptGenerator()
 
   const handleCopyAccount = (accountNumber: string) => {
     navigator.clipboard.writeText(accountNumber)
@@ -90,6 +97,23 @@ export default function Checkout() {
     }))
   }
 
+  const handleProofUpload = (receipt: ManualPaymentReceipt, imageUrl: string) => {
+    const updatedReceipt = receiptGenerator.addPaymentProof(receipt, imageUrl)
+    setGeneratedReceipt(updatedReceipt)
+    saveReceiptToStorage(updatedReceipt)
+    alert('Payment proof submitted! Admin will review it within 24 hours.')
+  }
+
+  const saveReceiptToStorage = (receipt: Receipt) => {
+    const existingReceipts = JSON.parse(localStorage.getItem('yafrican_receipts') || '[]')
+    const updatedReceipts = [...existingReceipts, receipt]
+    localStorage.setItem('yafrican_receipts', JSON.stringify(updatedReceipts))
+  }
+
+  const isManualReceipt = (receipt: Receipt): receipt is ManualPaymentReceipt => {
+    return receipt.type === 'manual'
+  }
+
   const handlePlaceOrder = () => {
     if (!selectedBank) {
       alert('Please select a payment method')
@@ -101,23 +125,80 @@ export default function Checkout() {
       return
     }
 
-    // Here you would typically send the order to your backend
-    const orderData = {
-      customerInfo,
-      selectedBank: ethiopianBanks.find(bank => bank.id === selectedBank),
-      cartItems,
-      totalPrice,
-      orderDate: new Date().toISOString()
+    let receipt: ManualPaymentReceipt | TelebirrReceipt
+
+    if (selectedBank === 'telebirr') {
+      // Generate Telebirr receipt automatically
+      const transactionId = `TBR${Date.now()}${Math.floor(Math.random() * 1000)}`
+      receipt = receiptGenerator.generateTelebirrReceipt(
+        customerInfo,
+        cartItems,
+        totalPrice,
+        transactionId
+      )
+      
+      // Simulate automatic Telebirr payment processing
+      setTimeout(() => {
+        const confirmedReceipt = receiptGenerator.confirmTelebirrPayment(
+          receipt as TelebirrReceipt,
+          transactionId
+        )
+        setGeneratedReceipt(confirmedReceipt)
+        saveReceiptToStorage(confirmedReceipt)
+      }, 3000)
+
+    } else {
+      // Generate manual payment receipt
+      const bankDetails = ethiopianBanks.find(bank => bank.id === selectedBank)
+      const paymentMethod = selectedBank === 'telegram' ? 'telegram' : 
+                           selectedBank === 'whatsapp' ? 'whatsapp' : 'bank_transfer'
+      
+      receipt = receiptGenerator.generateManualReceipt(
+        customerInfo,
+        cartItems,
+        totalPrice,
+        paymentMethod,
+        bankDetails
+      )
     }
 
-    console.log('Order placed:', orderData)
-    
-    // Show success message and clear cart
-    alert('Order placed successfully! Please complete your bank transfer and send us the receipt.')
+    setGeneratedReceipt(receipt)
+    setShowReceipt(true)
+    saveReceiptToStorage(receipt)
     clearCart()
   }
 
+  const handlePrintReceipt = () => {
+    window.print()
+  }
+
+  const handleShareReceipt = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `Order Receipt - ${generatedReceipt?.orderNumber}`,
+        text: `Your order receipt from Yafrican Online Store`,
+        url: window.location.href,
+      })
+    } else {
+      navigator.clipboard.writeText(window.location.href)
+      alert('Receipt link copied to clipboard!')
+    }
+  }
+
   const selectedBankDetails = ethiopianBanks.find(bank => bank.id === selectedBank)
+
+  if (showReceipt && generatedReceipt) {
+    return (
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <ReceiptDisplay 
+          receipt={generatedReceipt}
+          onPrint={handlePrintReceipt}
+          onShare={handleShareReceipt}
+          onProofUpload={isManualReceipt(generatedReceipt) ? handleProofUpload : undefined}
+        />
+      </div>
+    )
+  }
 
   if (cartItems.length === 0) {
     return (
@@ -204,7 +285,7 @@ export default function Checkout() {
             <h2 className="text-xl font-semibold text-gray-900 mb-4">Order Summary</h2>
             <div className="space-y-3">
               {cartItems.map((item) => (
-                <div key={item.id} className="flex justify-between items-center"> {/* Changed from item._id to item.id */}
+                <div key={item.id} className="flex justify-between items-center">
                   <div className="flex items-center space-x-3">
                     <img
                       src={item.image}
@@ -311,8 +392,7 @@ export default function Checkout() {
                   )}
                   <div className="mt-3 p-3 bg-yellow-100 border border-yellow-200 rounded">
                     <p className="text-yellow-800 text-xs">
-                      💡 <strong>Important:</strong> After making the transfer, please keep the 
-                      receipt and send it to us via WhatsApp or email for order confirmation.
+                      💡 <strong>Important:</strong> After making the transfer, please upload the receipt screenshot for admin approval.
                     </p>
                   </div>
                 </div>
@@ -336,8 +416,9 @@ export default function Checkout() {
               <li>1. Fill in your delivery information</li>
               <li>2. Select your preferred bank</li>
               <li>3. Transfer the total amount to the provided account</li>
-              <li>4. Send us the transfer receipt via WhatsApp/Email</li>
-              <li>5. We'll process your order and confirm delivery</li>
+              <li>4. Upload the transfer receipt screenshot</li>
+              <li>5. Wait for admin approval (within 24 hours)</li>
+              <li>6. We'll process your order and confirm delivery</li>
             </ol>
           </div>
         </div>
