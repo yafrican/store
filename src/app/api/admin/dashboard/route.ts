@@ -1,10 +1,10 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server' // ✅ Import NextRequest
 import { verifyAdmin } from '@/lib/adminAuth'
 import connectMongo from '@/lib/mongodb'
 import User from '@/models/User'
 import Product from '@/models/Product'
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) { // ✅ Change from Request to NextRequest
   try {
     await verifyAdmin(req)
     await connectMongo()

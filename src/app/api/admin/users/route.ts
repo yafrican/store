@@ -1,13 +1,13 @@
 // src/app/api/admin/users/route.ts
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdmin } from '@/lib/adminAuth'
 import connectMongo from '@/lib/mongodb'
 import User from '@/models/User'
 import Product from '@/models/Product'
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) { // ✅ Change parameter type to NextRequest
   try {
-    await verifyAdmin(req)
+    await verifyAdmin(req) // ✅ Pass 'req' directly, not 'req.NextRequest'
     await connectMongo()
 
     const { searchParams } = new URL(req.url)

@@ -1,18 +1,18 @@
-import { NextResponse } from 'next/server'
+// app/api/admin/products/[id]/approve/route.ts
+import { NextRequest, NextResponse } from 'next/server' // ✅ Import NextRequest
 import { verifyAdmin } from '@/lib/adminAuth'
 import connectMongo from '@/lib/mongodb'
 import Product from '@/models/Product'
 
 export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest, // ✅ Change from Request to NextRequest
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
-    await verifyAdmin(req)
+    await verifyAdmin(req) // ✅ Now this will work
     await connectMongo()
 
-    // ✅ FIX: Direct access to params in Next.js 15
-    const { id } = params
+    const { id } = await context.params
 
     console.log('🔍 Finding product with ID:', id)
     const product = await Product.findById(id)
@@ -24,7 +24,6 @@ export async function PATCH(
       )
     }
 
-    // Check if product is already approved
     if (product.status === 'approved') {
       return NextResponse.json(
         { error: 'Product is already approved' },
@@ -39,7 +38,6 @@ export async function PATCH(
       status: product.status
     })
 
-    // Update product status to approved
     const updatedProduct = await Product.findByIdAndUpdate(
       id,
       { 
@@ -54,9 +52,6 @@ export async function PATCH(
       name: updatedProduct.name,
       status: updatedProduct.status
     })
-
-    // TODO: Send notification to seller about product approval
-    // This would be implemented with a notification system
 
     return NextResponse.json({
       success: true,

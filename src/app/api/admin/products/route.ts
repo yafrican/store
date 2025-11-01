@@ -1,10 +1,10 @@
 // src/app/api/admin/products/route.ts
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server' // ✅ Import NextRequest
 import { verifyAdmin } from '@/lib/adminAuth'
 import connectMongo from '@/lib/mongodb'
 import Product from '@/models/Product'
 
-export async function GET(req: Request) {
+export async function GET(req: NextRequest) { // ✅ Change from Request to NextRequest
   console.log('🔄 ADMIN PRODUCTS API CALLED')
   
   try {

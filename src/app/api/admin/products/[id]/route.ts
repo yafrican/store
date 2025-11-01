@@ -1,18 +1,19 @@
 // src/app/api/admin/products/[id]/route.ts
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server' // ✅ Import NextRequest
 import { verifyAdmin } from '@/lib/adminAuth'
 import connectMongo from '@/lib/mongodb'
 import Product from '@/models/Product'
 
 export async function GET(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest, // ✅ Change from Request to NextRequest
+  { params }: { params: Promise<{ id: string }> } // ✅ Add Promise wrapper
 ) {
   try {
     const admin = await verifyAdmin(request)
     await connectMongo()
 
-    const product = await Product.findById(params.id)
+    const { id } = await params // ✅ Await the params
+    const product = await Product.findById(id)
       .populate({ path: 'seller', select: 'name email storeName phone', model: 'User' })
       .lean()
 
@@ -33,8 +34,8 @@ export async function GET(
 }
 
 export async function DELETE(
-  request: Request,
-  { params }: { params: { id: string } }
+  request: NextRequest, // ✅ Change from Request to NextRequest
+  { params }: { params: Promise<{ id: string }> } // ✅ Add Promise wrapper
 ) {
   try {
     console.log('🗑️ ADMIN PRODUCT DELETE API CALLED')
@@ -48,7 +49,7 @@ export async function DELETE(
     console.log('✅ MongoDB connected')
 
     // Get product ID from params
-    const { id } = params
+    const { id } = await params // ✅ Await the params
     console.log('📝 Deleting product ID:', id)
 
     if (!id) {

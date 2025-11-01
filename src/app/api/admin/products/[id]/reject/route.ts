@@ -1,18 +1,18 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { verifyAdmin } from '@/lib/adminAuth'
 import connectMongo from '@/lib/mongodb'
 import Product from '@/models/Product'
 
 export async function PATCH(
-  req: Request,
-  { params }: { params: { id: string } }
+  req: NextRequest, // ✅ Change from Request to NextRequest
+  { params }: { params: Promise<{ id: string }> } // ✅ Add Promise wrapper for params
 ) {
   try {
     await verifyAdmin(req)
     await connectMongo()
 
-    // ✅ FIX: Direct access to params in Next.js 15
-    const { id } = params
+    // ✅ FIX: Await the params in Next.js 15
+    const { id } = await params
 
     if (!id) {
       return NextResponse.json(
