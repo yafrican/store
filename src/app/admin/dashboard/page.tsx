@@ -1,5 +1,6 @@
 
 'use client'
+export const dynamic = 'force-dynamic'
 
 import { useEffect, useState } from 'react'
 import { Receipt } from '@/types/receipt'
@@ -67,7 +68,6 @@ interface DashboardStats {
 // =========================
 // Professional Sidebar Component (Responsive)
 // =========================
-export const dynamic = 'force-dynamic'
 
 function AdminSidebar({ 
   activeSection, 
