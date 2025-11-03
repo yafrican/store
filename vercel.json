@@ -1,11 +1,8 @@
 {
   "version": 2,
-  "builds": [
-    {
-      "src": "package.json",
-      "use": "@vercel/next"
-    }
-  ],
+  "buildCommand": "npm rebuild lightningcss && next build",
   "installCommand": "npm install --force",
-  "buildCommand": "npm rebuild lightningcss && next build"
+  "env": {
+    "NODE_ENV": "production"
+  }
 }
