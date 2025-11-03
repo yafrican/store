@@ -1,4 +1,3 @@
-export const dynamic = 'force-dynamic'
 
 'use client'
 
@@ -68,6 +67,8 @@ interface DashboardStats {
 // =========================
 // Professional Sidebar Component (Responsive)
 // =========================
+export const dynamic = 'force-dynamic'
+
 function AdminSidebar({ 
   activeSection, 
   setActiveSection,
