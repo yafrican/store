@@ -11,7 +11,7 @@
     "start": "next start",
     "create-admin": "ts-node scripts/createAdmin.ts",
     "lint": "next lint",
-    "postinstall": "npm rebuild lightningcss"
+    "postinstall": "npm rebuild sharp && npm rebuild lightningcss"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
