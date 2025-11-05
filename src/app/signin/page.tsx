@@ -74,23 +74,7 @@ const handleSubmit = async (e: React.FormEvent) => {
     alert('Facebook login clicked — implement your OAuth flow here')
   }
 
-  // Demo credentials for testing
-  const fillDemoCredentials = (role: 'admin' | 'seller' | 'customer') => {
-    switch (role) {
-      case 'admin':
-        setEmail('admin@yafrican.com')
-        setPassword('yafrican@admin123')
-        break
-      case 'seller':
-        setEmail('seller@example.com')
-        setPassword('seller123')
-        break
-      case 'customer':
-        setEmail('customer@example.com')
-        setPassword('customer123')
-        break
-    }
-  }
+
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -219,49 +203,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               </p>
             </motion.div>
 
-            {/* Demo Credentials */}
-            <motion.div 
-              variants={itemVariants}
-              className="mb-6 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl"
-            >
-              <p className="text-sm font-semibold text-yellow-800 dark:text-yellow-400 mb-3 text-center">
-                Quick Demo Access
-              </p>
-              <div className="grid grid-cols-3 gap-2 text-xs">
-                <button
-                  type="button"
-                  onClick={() => fillDemoCredentials('admin')}
-                  className="p-2 bg-yellow-100 dark:bg-yellow-800 text-yellow-700 dark:text-yellow-300 rounded-lg hover:bg-yellow-200 dark:hover:bg-yellow-700 transition-colors font-medium"
-                >
-                  Admin
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillDemoCredentials('seller')}
-                  className="p-2 bg-amber-100 dark:bg-amber-800 text-amber-700 dark:text-amber-300 rounded-lg hover:bg-amber-200 dark:hover:bg-amber-700 transition-colors font-medium"
-                >
-                  Seller
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fillDemoCredentials('customer')}
-                  className="p-2 bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors font-medium"
-                >
-                  Customer
-                </button>
-              </div>
-            </motion.div>
-
-            {error && (
-              <motion.div
-                initial={{ scale: 0.95, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-center text-sm"
-              >
-                {error}
-              </motion.div>
-            )}
-
+    
             <form onSubmit={handleSubmit} className="space-y-6">
               <motion.div variants={itemVariants}>
                 <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
