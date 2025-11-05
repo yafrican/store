@@ -11,7 +11,9 @@ import 'react-toastify/dist/ReactToastify.css'
 export const metadata: Metadata = {
   title: 'Yafrican | Local Marketplace for Ethiopia',
   description: 'Discover and shop from local sellers in Ethiopia. Yafrican makes it easy to connect buyers and sellers.',
-  // ... rest of your metadata
+  keywords: 'ethiopia, marketplace, shopping, local sellers, online store',
+  authors: [{ name: 'Yafrican Team' }],
+  viewport: 'width=device-width, initial-scale=1',
 }
 
 export default function RootLayout({
@@ -24,20 +26,20 @@ export default function RootLayout({
       <body className="bg-white text-gray-900 antialiased w-full">
         <CartProvider>
           <WishlistProvider>
-            {/* Navbar */}
+            {/* Navbar - Visible on all devices */}
             <Navbar />
 
             {/* Main Content */}
-            <div className="w-full flex justify-center">
+            <main className="w-full flex justify-center min-h-screen">
               <div className="w-full">
                 {children}
               </div>
-            </div>
+            </main>
 
-            {/* Mobile Bottom Navigation */}
+            {/* Mobile Bottom Navigation - Only on mobile */}
             <MobileBottomNav />
 
-            {/* Footer */}
+            {/* Footer - Visible on all devices */}
             <Footer />
 
             {/* React Toastify Container */}

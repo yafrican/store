@@ -1,4 +1,4 @@
-// src/app/profile/page.tsx
+
 'use client'
 
 import { useEffect, useState } from 'react'
@@ -43,8 +43,9 @@ export default function ProfilePage() {
     try {
       const response = await fetch('/api/profile')
       
+      // FIX: Redirect to /signin instead of /login
       if (response.status === 401) {
-        router.push('/login')
+        router.push('/signin') // ← CHANGED THIS LINE
         return
       }
 
@@ -71,6 +72,23 @@ export default function ProfilePage() {
       setLoading(false)
     }
   }
+//logout
+ const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', {
+        method: 'POST',
+        credentials: 'include',
+      })
+      setUser(null)
+      // Clear any stored auth state
+      localStorage.removeItem('user-auth')
+      window.location.href = '/'
+    } catch (err) {
+      console.error('Logout failed', err)
+    }
+  }
+
+//end
 
   const handleSave = async () => {
     setSaving(true)
@@ -131,6 +149,13 @@ export default function ProfilePage() {
           <User className="w-16 h-16 text-gray-400 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">Profile Not Found</h2>
           <p className="text-gray-600">Please log in to view your profile.</p>
+          {/* ADDED: Redirect button to signin */}
+          <button
+            onClick={() => router.push('/signin')}
+            className="mt-4 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go to Sign In
+          </button>
         </div>
       </div>
     )
@@ -369,11 +394,23 @@ export default function ProfilePage() {
                   </button>
                 )}
                 <button
+                  onClick={() => router.push('/settings')}
+                  className="w-full text-left bg-blue-50 px-4 py-3 text-blue-500 hover:bg-blue-600 rounded-lg transition-colors"
+                >
+                  Setting
+                </button>
+                <button
                   onClick={() => router.push('/')}
                   className="w-full text-left px-4 py-3 text-gray-600 hover:bg-gray-50 rounded-lg transition-colors"
                 >
                   Back to Home
                 </button>
+                <button
+                onClick={handleLogout}
+                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition-colors duration-300 shadow-lg hover:shadow-xl"
+              >
+                Log Out
+              </button>
               </div>
             </motion.div>
           </div>

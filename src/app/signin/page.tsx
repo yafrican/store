@@ -20,53 +20,52 @@ export default function SignInPage() {
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+  // In your handleSubmit function, add this debug:
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault()
+  setError('')
+  setLoading(true)
 
-    if (!email || !password) {
-      setError('Email and password are required')
+  try {
+    console.log('🔐 Attempting login for:', email)
+    const res = await fetch('/api/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: email.toLowerCase(), password }),
+      credentials: 'include' // Make sure this is included
+    })
+
+    console.log('🔐 Login response status:', res.status)
+    const data = await res.json()
+    console.log('🔐 Login response data:', data)
+
+    if (!res.ok) {
+      setError(data.error || 'Login failed')
       setLoading(false)
       return
     }
 
-    try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: email.toLowerCase(), password }),
-      })
-
-      const data = await res.json()
-
-      if (!res.ok) {
-        setError(data.error || 'Login failed')
-        setLoading(false)
-        return
-      }
-
-      // Role-based redirect
-      switch (data.user.role) {
-        case 'admin':
-          window.location.href = '/admin/dashboard'
-          break
-        case 'seller':
-          window.location.href = '/seller/dashboard'
-          break
-        case 'customer':
-        default:
-          window.location.href = '/'
-          break
-      }
-    } catch (err: any) {
-      console.error('Login fetch error:', err)
-      setError('Something went wrong. Please try again.')
-    } finally {
-      setLoading(false)
+    console.log('✅ Login successful, user:', data.user)
+    
+    // Role-based redirect
+    switch (data.user.role) {
+      case 'admin':
+        window.location.href = '/admin/dashboard'
+        break
+      case 'seller':
+        window.location.href = '/seller/dashboard'
+        break
+      case 'customer':
+      default:
+        window.location.href = '/'
+        break
     }
+  } catch (err: any) {
+    console.error('❌ Login fetch error:', err)
+    setError('Something went wrong. Please try again.')
+    setLoading(false)
   }
-
+}
   const handleGoogleLogin = () => {
     alert('Google login clicked — implement your OAuth flow here')
   }

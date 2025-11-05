@@ -11,8 +11,6 @@ import {
   ShoppingBagIcon,
   UserIcon,
 } from '@heroicons/react/24/outline'
-// Remove this import since we're not using notifications in this component
-// import { useNotification } from '@/app/contexts/NotificationContext'
 
 interface NavItem {
   href: string
@@ -62,11 +60,6 @@ export default function MobileBottomNav() {
     }
   ]
 
-  // REMOVED THE PROBLEMATIC CODE:
-  // You were calling addNotification() directly in the component body
-  // This would cause infinite re-renders and errors
-  // Notifications should be triggered by user actions, not automatically
-
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-gray-900 border-t border-gray-700 z-50 lg:hidden">
       <div className="flex items-center justify-around">
@@ -84,7 +77,6 @@ export default function MobileBottomNav() {
             >
               <div className="relative">
                 <Icon className="w-6 h-6" />
-                {/* Fixed: Check if badge exists AND is greater than 0 */}
                 {item.badge !== undefined && item.badge > 0 && (
                   <span className={`absolute -top-2 -right-2 text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold ${
                     item.href === '/cart' 

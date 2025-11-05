@@ -1,28 +1,104 @@
-// src/app/api/sellers/products/route.ts - COMPLETELY FIXED WITH SPECIFICATIONS
+// src/app/api/sellers/products/route.ts - FIXED TOKEN EXTRACTION
 import { NextResponse } from "next/server"
 import jwt from "jsonwebtoken"
 import mongoose from "mongoose"
 import connectMongo from "@/lib/mongodb"
 import Product from "@/models/Product"
 
-const JWT_SECRET = process.env.JWT_SECRET!
+const JWT_SECRET = process.env.JWT_SECRET || 'a8f9d7g6h5j4k3l2m1n0p9q8r7s6t5u4v3w2x1y0z'
 
 function verifyToken(req: Request) {
-  const cookieHeader = req.headers.get("cookie") || ""
-  const match = cookieHeader.match(/token=([^;]+)/)
-  const token = match ? match[1] : null
+  try {
+    console.log('🔍 Starting token verification for seller...')
+    
+    const cookieHeader = req.headers.get("cookie") || ""
+    console.log('🔍 Raw cookie header:', cookieHeader)
+    
+    // ✅ FIX: Extract ALL cookies properly and find the JWT token
+    const cookies = cookieHeader.split(';').map(cookie => cookie.trim())
+    console.log('🔍 All cookies:', cookies)
+    
+    let token = null
+    for (const cookie of cookies) {
+      if (cookie.startsWith('token=')) {
+        token = cookie.substring(6) // Remove 'token='
+        break
+      }
+    }
 
-  if (!token) throw new Error("Not authenticated")
-  
-  const payload = jwt.verify(token, JWT_SECRET) as { id: string; role: string }
-  if (payload.role !== "seller") throw new Error("Access denied")
-  
-  return payload
+    console.log('🔍 JWT Token extracted:', token ? `${token.substring(0, 50)}...` : 'No JWT token found')
+    console.log('🔍 Token starts with eyJ?:', token ? token.startsWith('eyJ') : false)
+
+    if (!token) {
+      throw new Error("Not authenticated - No token found")
+    }
+
+    // ✅ FIX: Validate it's a JWT token (should start with eyJ)
+    if (!token.startsWith('eyJ')) {
+      console.error('❌ Wrong token type extracted. Expected JWT token starting with "eyJ"')
+      console.error('❌ Actual token starts with:', token.substring(0, 20))
+      throw new Error("Invalid token format")
+    }
+
+    // ✅ FIX: Trim whitespace
+    const cleanToken = token.trim()
+    console.log('🔍 Clean token length:', cleanToken.length)
+    console.log('🔍 JWT_SECRET exists:', !!JWT_SECRET)
+
+    // ✅ FIX: Debug token structure
+    try {
+      const tokenParts = cleanToken.split('.')
+      console.log('🔍 Token parts:', tokenParts.length)
+      if (tokenParts.length === 3) {
+        const header = JSON.parse(Buffer.from(tokenParts[0], 'base64').toString())
+        const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString())
+        console.log('🔍 Token algorithm:', header.alg)
+        console.log('🔍 Token payload role:', payload.role)
+      } else {
+        console.error('❌ Invalid JWT structure - expected 3 parts, got:', tokenParts.length)
+        throw new Error("Invalid JWT structure")
+      }
+    } catch (debugError) {
+      console.error('❌ Token debug failed:', debugError)
+      throw new Error("Invalid token format")
+    }
+
+    // ✅ FIX: JWT verification
+    let payload;
+    try {
+      payload = jwt.verify(cleanToken, JWT_SECRET) as { id: string; role: string; email: string }
+      console.log('✅ Token verified successfully, payload:', {
+        id: payload.id,
+        role: payload.role,
+        email: payload.email
+      })
+    } catch (jwtError: any) {
+      console.error('❌ JWT verification failed:', {
+        error: jwtError.message,
+        name: jwtError.name
+      })
+      throw new Error(`Authentication failed: ${jwtError.message}`)
+    }
+    
+    if (payload.role !== "seller") {
+      console.error('❌ Access denied - user role:', payload.role)
+      throw new Error("Access denied - Seller access required")
+    }
+    
+    console.log('✅ Seller access granted for user:', payload.id)
+    return payload
+    
+  } catch (error: any) {
+    console.error('❌ Token verification error:', error.message)
+    throw error
+  }
 }
 
-// GET seller products with status filtering - COMPLETELY FIXED
+// GET seller products with status filtering - FIXED
 export async function GET(req: Request) {
   try {
+    console.log('🔄 Starting GET /api/sellers/products...')
+    
     const payload = verifyToken(req)
     await connectMongo()
 
@@ -30,10 +106,10 @@ export async function GET(req: Request) {
     const url = new URL(req.url)
     const status = url.searchParams.get('status')
     
-    let query: any = { seller: payload.id }
+    let query: any = { seller: new mongoose.Types.ObjectId(payload.id) }
     
     // If status specified, filter by status
-    if (status) {
+    if (status && status !== 'all') {
       query.status = status
     }
 
@@ -41,16 +117,15 @@ export async function GET(req: Request) {
 
     const products = await Product.find(query).sort({ createdAt: -1 })
 
-    // ✅ FIXED: Enhanced product formatting with proper stock logic
+    console.log('📦 Raw products from DB:', products.length)
+
+    // Enhanced product formatting
     const formattedProducts = products.map(product => {
-      // ✅ FIX: Calculate inStock based on both inStock field AND stock quantity
       const hasStock = product.stock > 0
       const isInStock = product.inStock !== undefined ? product.inStock && hasStock : hasStock
       
-      // ✅ FIX: Normalize category to uppercase for consistency
       const normalizedCategory = product.category ? product.category.toUpperCase() : 'UNCATEGORIZED'
 
-      // ✅ FIXED: Ensure specifications is always an object
       const safeSpecifications = product.specifications && typeof product.specifications === 'object' 
         ? product.specifications 
         : {}
@@ -68,54 +143,42 @@ export async function GET(req: Request) {
         inStock: isInStock,
         stock: product.stock || 0,
         seller: product.seller,
-        // ✅ FIXED: Include specifications in response with safe default
         specifications: safeSpecifications,
         createdAt: product.createdAt,
         updatedAt: product.updatedAt
       }
     })
 
-    console.log('📦 Formatted products response:', formattedProducts.length, 'products')
-    console.log('📦 Sample product with specs:', formattedProducts[0] ? {
-      name: formattedProducts[0].name,
-      category: formattedProducts[0].category,
-      specifications: formattedProducts[0].specifications,
-      specCount: Object.keys(formattedProducts[0].specifications).length
-    } : 'No products')
+    console.log('✅ Successfully formatted', formattedProducts.length, 'products')
 
     return NextResponse.json({ 
       success: true, 
       products: formattedProducts
     })
+    
   } catch (error: any) {
-    console.error("Products fetch error:", error)
+    console.error("❌ Products fetch error:", error)
     return NextResponse.json({ 
+      success: false,
       error: error.message || "Server error" 
     }, { 
-      status: error.message === "Not authenticated" ? 401 : 
-            error.message === "Access denied" ? 403 : 500 
+      status: error.message.includes("Not authenticated") ? 401 : 
+            error.message.includes("Access denied") ? 403 : 500 
     })
   }
 }
 
-// POST create new product - COMPLETELY FIXED WITH SPECIFICATIONS
+// POST create new product
 export async function POST(req: Request) {
   try {
+    console.log('🔄 Starting POST /api/sellers/products...')
+    
     const payload = verifyToken(req)
     await connectMongo()
 
-    console.log('🔍 Seller ID:', payload.id)
-
     const data = await req.json()
-    console.log('🔄 Creating product with data:', {
-      name: data.name,
-      category: data.category,
-      specifications: data.specifications,
-      hasSpecifications: !!data.specifications,
-      specCount: data.specifications ? Object.keys(data.specifications).length : 0
-    })
 
-    // ✅ FIX: Enhanced validation
+    // Validation
     if (!data.name?.trim()) {
       return NextResponse.json({
         success: false,
@@ -137,7 +200,6 @@ export async function POST(req: Request) {
       }, { status: 400 })
     }
 
-    // ✅ FIX: Validate stock
     const stock = data.stock ? parseInt(data.stock) : 1
     if (stock < 0) {
       return NextResponse.json({
@@ -146,12 +208,10 @@ export async function POST(req: Request) {
       }, { status: 400 })
     }
 
-    // ✅ FIXED: Ensure specifications is a proper object
     const safeSpecifications = data.specifications && typeof data.specifications === 'object' 
       ? data.specifications 
       : {}
 
-    // ✅ FIX: Create product with ALL required fields and proper defaults INCLUDING SPECIFICATIONS
     const productData = {
       name: data.name.trim(),
       price: parseFloat(data.price),
@@ -164,39 +224,15 @@ export async function POST(req: Request) {
       status: 'pending',
       inStock: stock > 0,
       stock: stock,
-      // ✅ FIXED: Save specifications to database with proper object
       specifications: safeSpecifications
     }
 
-    console.log('📦 Final product data to save:', {
-      ...productData,
-      specifications: productData.specifications,
-      specCount: Object.keys(productData.specifications).length
-    })
-
-    // ✅ FIX: Use create() for better error handling
     const product = await Product.create(productData)
 
-    // ✅ FIXED: Safe handling of created product specifications
     const createdSpecifications = product.specifications && typeof product.specifications === 'object' 
       ? product.specifications 
       : {}
 
-    console.log('✅ Product saved successfully with specifications:', {
-      _id: product._id,
-      name: product.name,
-      price: product.price,
-      originalPrice: product.originalPrice,
-      category: product.category,
-      status: product.status,
-      inStock: product.inStock,
-      stock: product.stock,
-      seller: product.seller,
-      specifications: createdSpecifications,
-      specCount: Object.keys(createdSpecifications).length
-    })
-
-    // ✅ FIX: Return complete product data with normalized category AND specifications
     const formattedProduct = {
       _id: product._id,
       name: product.name,
@@ -210,7 +246,6 @@ export async function POST(req: Request) {
       inStock: product.inStock,
       stock: product.stock,
       seller: product.seller,
-      // ✅ FIXED: Include specifications in response with safe default
       specifications: createdSpecifications,
       createdAt: product.createdAt,
       updatedAt: product.updatedAt
@@ -247,7 +282,7 @@ export async function POST(req: Request) {
   }
 }
 
-// PATCH update product stock - COMPLETELY FIXED WITH SPECIFICATIONS
+// PATCH update product stock
 export async function PATCH(req: Request) {
   try {
     const payload = verifyToken(req)
@@ -262,7 +297,6 @@ export async function PATCH(req: Request) {
       }, { status: 400 })
     }
 
-    // ✅ FIX: Find product by seller to ensure ownership
     const product = await Product.findOne({ 
       _id: productId, 
       seller: payload.id 
@@ -275,7 +309,6 @@ export async function PATCH(req: Request) {
       }, { status: 404 })
     }
 
-    // ✅ FIX: Update fields
     const updateData: any = { updatedAt: new Date() }
     
     if (inStock !== undefined) {
@@ -285,7 +318,6 @@ export async function PATCH(req: Request) {
     if (stock !== undefined) {
       const stockValue = parseInt(stock)
       updateData.stock = stockValue
-      // Auto-update inStock based on stock quantity if not explicitly set
       if (inStock === undefined) {
         updateData.inStock = stockValue > 0
       }
@@ -304,12 +336,10 @@ export async function PATCH(req: Request) {
       }, { status: 500 })
     }
 
-    // ✅ FIXED: Safe handling of specifications
     const safeSpecifications = updatedProduct.specifications && typeof updatedProduct.specifications === 'object' 
       ? updatedProduct.specifications 
       : {}
 
-    // ✅ FIX: Return normalized product data WITH SPECIFICATIONS
     const formattedProduct = {
       _id: updatedProduct._id,
       name: updatedProduct.name,
@@ -323,7 +353,6 @@ export async function PATCH(req: Request) {
       inStock: updatedProduct.inStock,
       stock: updatedProduct.stock,
       seller: updatedProduct.seller,
-      // ✅ FIXED: Include specifications in response with safe default
       specifications: safeSpecifications,
       createdAt: updatedProduct.createdAt,
       updatedAt: updatedProduct.updatedAt
@@ -344,7 +373,7 @@ export async function PATCH(req: Request) {
   }
 }
 
-// DELETE product - ADD THIS METHOD FOR COMPLETENESS
+// DELETE product
 export async function DELETE(req: Request) {
   try {
     const payload = verifyToken(req)
@@ -360,7 +389,6 @@ export async function DELETE(req: Request) {
       }, { status: 400 })
     }
 
-    // ✅ FIX: Find product by seller to ensure ownership
     const product = await Product.findOne({ 
       _id: productId, 
       seller: payload.id 
@@ -388,6 +416,7 @@ export async function DELETE(req: Request) {
     }, { status: 500 })
   }
 }
+
 // // src/app/api/sellers/products/route.ts - COMPLETELY FIXED
 // import { NextResponse } from "next/server"
 // import jwt from "jsonwebtoken"

@@ -3,19 +3,93 @@ import jwt from "jsonwebtoken"
 import connectMongo from "@/lib/mongodb"
 import Product from "@/models/Product"
 
-const JWT_SECRET = process.env.JWT_SECRET!
+const JWT_SECRET = process.env.JWT_SECRET || 'a8f9d7g6h5j4k3l2m1n0p9q8r7s6t5u4v3w2x1y0z'
 
 function verifyToken(req: Request) {
-  const cookieHeader = req.headers.get("cookie") || ""
-  const match = cookieHeader.match(/token=([^;]+)/)
-  const token = match ? match[1] : null
+  try {
+    console.log('🔍 Starting token verification for seller stock update...')
+    
+    const cookieHeader = req.headers.get("cookie") || ""
+    console.log('🔍 Raw cookie header:', cookieHeader)
+    
+    // ✅ FIX: Extract ALL cookies properly and find the JWT token
+    const cookies = cookieHeader.split(';').map(cookie => cookie.trim())
+    console.log('🔍 All cookies:', cookies)
+    
+    let token = null
+    for (const cookie of cookies) {
+      if (cookie.startsWith('token=')) {
+        token = cookie.substring(6) // Remove 'token='
+        break
+      }
+    }
 
-  if (!token) throw new Error("Not authenticated")
-  
-  const payload = jwt.verify(token, JWT_SECRET) as { id: string; role: string }
-  if (payload.role !== "seller") throw new Error("Access denied")
-  
-  return payload
+    console.log('🔍 JWT Token extracted:', token ? `${token.substring(0, 50)}...` : 'No JWT token found')
+    console.log('🔍 Token starts with eyJ?:', token ? token.startsWith('eyJ') : false)
+
+    if (!token) {
+      throw new Error("Not authenticated - No token found")
+    }
+
+    // ✅ FIX: Validate it's a JWT token (should start with eyJ)
+    if (!token.startsWith('eyJ')) {
+      console.error('❌ Wrong token type extracted. Expected JWT token starting with "eyJ"')
+      console.error('❌ Actual token starts with:', token.substring(0, 20))
+      throw new Error("Invalid token format")
+    }
+
+    // ✅ FIX: Trim whitespace
+    const cleanToken = token.trim()
+    console.log('🔍 Clean token length:', cleanToken.length)
+    console.log('🔍 JWT_SECRET exists:', !!JWT_SECRET)
+
+    // ✅ FIX: Debug token structure
+    try {
+      const tokenParts = cleanToken.split('.')
+      console.log('🔍 Token parts:', tokenParts.length)
+      if (tokenParts.length === 3) {
+        const header = JSON.parse(Buffer.from(tokenParts[0], 'base64').toString())
+        const payload = JSON.parse(Buffer.from(tokenParts[1], 'base64').toString())
+        console.log('🔍 Token algorithm:', header.alg)
+        console.log('🔍 Token payload role:', payload.role)
+      } else {
+        console.error('❌ Invalid JWT structure - expected 3 parts, got:', tokenParts.length)
+        throw new Error("Invalid JWT structure")
+      }
+    } catch (debugError) {
+      console.error('❌ Token debug failed:', debugError)
+      throw new Error("Invalid token format")
+    }
+
+    // ✅ FIX: JWT verification
+    let payload;
+    try {
+      payload = jwt.verify(cleanToken, JWT_SECRET) as { id: string; role: string; email: string }
+      console.log('✅ Token verified successfully, payload:', {
+        id: payload.id,
+        role: payload.role,
+        email: payload.email
+      })
+    } catch (jwtError: any) {
+      console.error('❌ JWT verification failed:', {
+        error: jwtError.message,
+        name: jwtError.name
+      })
+      throw new Error(`Authentication failed: ${jwtError.message}`)
+    }
+    
+    if (payload.role !== "seller") {
+      console.error('❌ Access denied - user role:', payload.role)
+      throw new Error("Access denied - Seller access required")
+    }
+    
+    console.log('✅ Seller access granted for user:', payload.id)
+    return payload
+    
+  } catch (error: any) {
+    console.error('❌ Token verification error:', error.message)
+    throw error
+  }
 }
 
 // ✅ FIXED: Proper type for Next.js 15
@@ -23,7 +97,7 @@ interface RouteParams {
   params: Promise<{ id: string }>
 }
 
-// PATCH update product stock
+// PATCH update product stock - FIXED
 export async function PATCH(request: Request, { params }: RouteParams) {
   try {
     // ✅ FIXED: Properly await params
@@ -125,7 +199,7 @@ export async function PATCH(request: Request, { params }: RouteParams) {
   }
 }
 
-// GET product stock
+// GET product stock - FIXED
 export async function GET(request: Request, { params }: RouteParams) {
   try {
     // ✅ FIXED: Properly await params
@@ -174,77 +248,3 @@ export async function GET(request: Request, { params }: RouteParams) {
     }, { status: 500 })
   }
 }
-// import { NextResponse } from "next/server"
-// import jwt from "jsonwebtoken"
-// import connectMongo from "@/lib/mongodb"
-// import Product from "@/models/Product"
-
-// const JWT_SECRET = process.env.JWT_SECRET!
-
-// function verifyToken(req: Request) {
-//   const cookieHeader = req.headers.get("cookie") || ""
-//   // Use same cookie name as other seller routes
-//   const match = cookieHeader.match(/token=([^;]+)/)
-//   const token = match ? match[1] : null
-
-//   if (!token) throw new Error("Not authenticated")
-  
-//   const payload = jwt.verify(token, JWT_SECRET) as { id: string; role: string }
-//   if (payload.role !== "seller") throw new Error("Access denied")
-  
-//   return payload
-// }
-
-// // PATCH update stock status
-// export async function PATCH(
-//   req: Request,
-//   { params }: { params: { id: string } }
-// ) {
-//   try {
-//     const payload = verifyToken(req)
-//     await connectMongo()
-
-//     const { inStock } = await req.json()
-
-//     // ✅ FIXED: Use 'seller' field instead of 'sellerId'
-//     const product = await Product.findOne({ 
-//       _id: params.id, 
-//       seller: payload.id 
-//     })
-
-//     if (!product) {
-//       return NextResponse.json({ 
-//         error: "Product not found" 
-//       }, { status: 404 })
-//     }
-
-//     // When marking out of stock, also zero stock so public listing reflects it.
-//     // When marking back to in stock and stock is 0, set to 1 as a minimal placeholder.
-//     const update: any = { inStock, updatedAt: new Date() }
-//     if (inStock === false) {
-//       update.stock = 0
-//     } else if (inStock === true && (product.stock === 0 || product.stock === undefined || product.stock === null)) {
-//       update.stock = 1
-//     }
-
-//     const updatedProduct = await Product.findByIdAndUpdate(
-//       params.id,
-//       update,
-//       { new: true }
-//     )
-
-//     return NextResponse.json({ 
-//       success: true, 
-//       product: updatedProduct 
-//     })
-//   } catch (error: any) {
-//     console.error("Stock update error:", error)
-//     const message = error.message || "Server error"
-//     const status = message === "Not authenticated" ? 401
-//       : message === "Access denied" ? 403
-//       : 500
-//     return NextResponse.json({ 
-//       error: message 
-//     }, { status })
-//   }
-// }

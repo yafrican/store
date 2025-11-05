@@ -1,41 +1,48 @@
+import jwt from 'jsonwebtoken';
 
-import jwt from 'jsonwebtoken'
-import connectMongo from '@/lib/mongodb'
-import User from '@/models/User'
-import { NextRequest, NextResponse } from 'next/server'
+const JWT_SECRET = process.env.JWT_SECRET || 'your-fallback-secret';
 
-const JWT_SECRET = process.env.JWT_SECRET!
-
-if (!JWT_SECRET) {
-  throw new Error('JWT_SECRET environment variable is required')
-}
-
-export async function verifyAdmin(req: NextRequest) {
+export async function verifyAdmin(request: Request) {
   try {
-    await connectMongo()
+    // Get token from cookies
+    const cookieHeader = request.headers.get('cookie');
+    console.log('🔍 All cookies:', cookieHeader);
     
-    const cookieHeader = req.headers.get('cookie') || ''
+    const token = cookieHeader?.split(';')
+      .find(c => c.trim().startsWith('token='))
+      ?.split('=')[1];
     
-    // Check for both possible cookie names
-    const tokenMatch = cookieHeader.match(/token=([^;]+)/)
-    const authTokenMatch = cookieHeader.match(/authToken=([^;]+)/)
-    const token = tokenMatch ? tokenMatch[1] : (authTokenMatch ? authTokenMatch[1] : null)
+    console.log('🔍 Token exists:', !!token);
+    if (token) {
+      console.log('🔍 Token value (first 20 chars):', token.substring(0, 20) + '...');
+    }
 
     if (!token) {
-      throw new Error('Not authenticated')
+      console.error('❌ No token found in cookies');
+      throw new Error('No authentication token');
     }
 
-    const payload = jwt.verify(token, JWT_SECRET) as { id: string; role: string; email: string }
-    
-    const user = await User.findById(payload.id)
-    
-    if (!user || user.role !== 'admin') {
-      throw new Error('Access denied')
+    // Verify token
+    try {
+      const decoded = jwt.verify(token, JWT_SECRET) as any;
+      console.log('✅ Token verified, user ID:', decoded.id);
+      console.log('🔍 User role:', decoded.role);
+      
+      // Check if user is admin
+      if (decoded.role !== 'admin') {
+        console.error('❌ User is not admin, role:', decoded.role);
+        throw new Error('Insufficient permissions');
+      }
+      
+      return decoded;
+    } catch (jwtError: any) {
+      console.error('❌ JWT verification failed:', jwtError.message);
+      console.error('🔍 JWT error name:', jwtError.name);
+      throw new Error('Authentication failed: ' + jwtError.message);
     }
-
-    return user
+    
   } catch (error: any) {
-    console.error('Admin auth error:', error.message)
-    throw new Error('Authentication failed')
+    console.error('Admin auth error:', error.message);
+    throw new Error('Authentication failed');
   }
 }

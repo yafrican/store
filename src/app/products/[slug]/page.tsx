@@ -68,6 +68,15 @@ export default function ProductDetailPage() {
     return `https://t.me/YafricanStore?text=${encodedMessage}`
   }
 
+  // Phone call functions
+  const callPhone1 = () => {
+    window.open('tel:+251912610850', '_self')
+  }
+
+  const callPhone2 = () => {
+    window.open('tel:+251929922289', '_self')
+  }
+
   // Product conversion functions for context compatibility
   const getCartProduct = (product: Product) => ({
     _id: product._id,
@@ -113,15 +122,12 @@ export default function ProductDetailPage() {
             image: data.images?.[0] || '',
           }
           setProduct(processedProduct)
-          
-          // ✅ FIXED: Using toast instead of addNotification
           toast.success(`Product "${processedProduct.name}" loaded successfully!`)
         } else {
           throw new Error(`Product not found (${res.status})`)
         }
       } catch (err: any) {
         setError('Product not found. Please check the URL and try again.')
-        // ✅ FIXED: Using toast instead of addNotification
         toast.error('Product not found. Please check the URL and try again.')
       } finally {
         setLoading(false)
@@ -129,7 +135,7 @@ export default function ProductDetailPage() {
     }
 
     fetchProduct()
-  }, [productSlug]) // ✅ REMOVED: addNotification from dependencies
+  }, [productSlug])
 
   // Recommendations tracking
   useEffect(() => {
@@ -269,7 +275,7 @@ export default function ProductDetailPage() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-6 lg:gap-10">
-          {/* Left: Image Gallery - MOBILE FIRST */}
+          {/* Left: Image Gallery */}
           <div className="flex-1">
             {/* Main Image */}
             <div className="w-full h-80 sm:h-96 lg:h-[500px] bg-white rounded-2xl overflow-hidden flex justify-center items-center mb-4 border border-gray-200 shadow-sm">
@@ -310,7 +316,7 @@ export default function ProductDetailPage() {
             )}
           </div>
 
-          {/* Right: Product Info - MOBILE FIRST */}
+          {/* Right: Product Info */}
           <div className="flex-1 space-y-6">
             {/* Product Header */}
             <div className="space-y-3">
@@ -388,7 +394,7 @@ export default function ProductDetailPage() {
               </p>
             </div>
 
-            {/* Action Buttons - MOBILE OPTIMIZED */}
+            {/* Action Buttons - OPTIMIZED FOR MOBILE & TABLET */}
             <div className="space-y-4">
               {/* Quantity Selector */}
               {!isOutOfStock && (
@@ -414,49 +420,34 @@ export default function ProductDetailPage() {
                 </div>
               )}
 
-              {/* Primary Action Buttons - MOBILE: ICONS, DESKTOP: TEXT */}
-              <div className="flex flex-col sm:flex-row gap-3">
-                {!isOutOfStock ? (
-                  <>
-                    {/* Add to Cart Button */}
-                    <button
-                      onClick={handleAddToCart}
-                      className="flex-1 flex items-center justify-center gap-2 sm:gap-3 bg-yellow-500 hover:bg-yellow-600 text-white px-4 sm:px-8 py-3 sm:py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl"
-                      title="Add to Cart"
-                    >
-                      <ShoppingCartIcon className="w-5 h-5" />
-                      <span className="hidden sm:inline">
-                        Add to Cart - {(displayPrice * quantity).toFixed(2)} Br
-                      </span>
-                      <span className="sm:hidden">
-                        Cart - {(displayPrice * quantity).toFixed(2)} Br
-                      </span>
-                    </button>
-                    
-                    {/* Wishlist Button */}
-                    <button
-                      onClick={handleWishlistToggle}
-                      className="flex items-center justify-center gap-2 sm:gap-3 border-2 border-gray-300 hover:border-yellow-500 text-gray-700 hover:text-yellow-600 px-4 sm:px-8 py-3 sm:py-4 rounded-xl transition-all duration-200 font-semibold hover:shadow-lg"
-                      title={isInWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
-                    >
-                      {isInWishlist ? (
-                        <HeartSolidIcon className="w-5 h-5 text-red-500" />
-                      ) : (
-                        <HeartIcon className="w-5 h-5" />
-                      )}
-                      <span className="hidden sm:inline">Wishlist</span>
-                    </button>
-                  </>
-                ) : (
-                  <div className="bg-gray-100 rounded-xl p-4 sm:p-6 text-center">
-                    <p className="text-gray-600 font-medium text-base sm:text-lg">
-                      This product is currently out of stock
-                    </p>
-                    <p className="text-gray-500 text-xs sm:text-sm mt-2">
-                      Check back later or contact us for availability
-                    </p>
-                  </div>
-                )}
+              {/* Cart & Wishlist - ALWAYS SIDE BY SIDE */}
+              <div className="grid grid-cols-2 gap-3">
+                {/* Add to Cart Button */}
+                <button
+                  onClick={handleAddToCart}
+                  disabled={isOutOfStock}
+                  className={`flex items-center justify-center gap-2 p-3 sm:p-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl ${
+                    isOutOfStock
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-yellow-500 hover:bg-yellow-600 text-white'
+                  }`}
+                >
+                  <ShoppingCartIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                  <span className="text-sm sm:text-base">Add to Cart</span>
+                </button>
+
+                {/* Wishlist Button */}
+                <button
+                  onClick={handleWishlistToggle}
+                  className="flex items-center justify-center gap-2 p-3 sm:p-4 border-2 border-gray-300 hover:border-yellow-500 text-gray-700 hover:text-yellow-600 rounded-xl transition-all duration-200 font-semibold hover:shadow-lg"
+                >
+                  {isInWishlist ? (
+                    <HeartSolidIcon className="w-5 h-5 sm:w-6 sm:h-6 text-red-500" />
+                  ) : (
+                    <HeartIcon className="w-5 h-5 sm:w-6 sm:h-6" />
+                  )}
+                  <span className="text-sm sm:text-base">Wishlist</span>
+                </button>
               </div>
             </div>
 
@@ -474,34 +465,32 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* Contact Methods */}
+            {/* Contact Methods - FULLY OPTIMIZED */}
             <div className="pt-6 border-t border-gray-200">
               <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-4">
                 Order Directly
               </h3>
               
-              {/* Call Buttons */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              {/* Phone Call Buttons - Side by Side */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 <button
-                  onClick={handleOrderAction}
-                  className="flex items-center justify-center gap-2 sm:gap-3 bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl text-sm sm:text-base"
+                  onClick={callPhone1}
+                  className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white p-3 sm:p-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
                 >
                   <PhoneIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="hidden sm:inline">Call 0912 61 08 50</span>
-                  <span className="sm:hidden">Call: 0912 61 08 50</span>
+                  <span className="text-sm sm:text-base">Call Us</span>
                 </button>
                 <button
-                  onClick={handleOrderAction}
-                  className="flex items-center justify-center gap-2 sm:gap-3 bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl text-sm sm:text-base"
+                  onClick={callPhone2}
+                  className="flex items-center justify-center gap-2 bg-green-600 hover:bg-green-700 text-white p-3 sm:p-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
                 >
                   <PhoneIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="hidden sm:inline">Call 0929 92 22 89</span>
-                  <span className="sm:hidden">Call: 0929 92 22 89</span>
+                  <span className="text-sm sm:text-base">Call Us</span>
                 </button>
               </div>
 
-              {/* Messaging Apps */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
+              {/* Messaging Apps - Side by Side */}
+              <div className="grid grid-cols-2 gap-3 mb-4">
                 <button
                   onClick={() => {
                     if (!phone) {
@@ -510,11 +499,10 @@ export default function ProductDetailPage() {
                     }
                     window.open(shareOnTelegram(product, phone, quantity, displayPrice), '_blank')
                   }}
-                  className="flex items-center justify-center gap-2 sm:gap-3 bg-blue-500 hover:bg-blue-600 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl text-sm sm:text-base"
+                  className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white p-3 sm:p-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
                 >
                   <PaperAirplaneIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="hidden sm:inline">Order on Telegram</span>
-                  <span className="sm:hidden">Telegram</span>
+                  <span className="text-sm sm:text-base">Telegram</span>
                 </button>
                 <button
                   onClick={() => {
@@ -524,40 +512,38 @@ export default function ProductDetailPage() {
                     }
                     window.open(shareOnWhatsApp(product, phone, quantity, displayPrice), '_blank')
                   }}
-                  className="flex items-center justify-center gap-2 sm:gap-3 bg-green-500 hover:bg-green-600 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl text-sm sm:text-base"
+                  className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white p-3 sm:p-4 rounded-xl transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
                 >
                   <ChatBubbleLeftRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="hidden sm:inline">Order on WhatsApp</span>
-                  <span className="sm:hidden">WhatsApp</span>
+                  <span className="text-sm sm:text-base">WhatsApp</span>
                 </button>
               </div>
 
-              {/* Phone Order Form */}
+              {/* Phone Order Form - Side by Side on larger screens */}
               <form
                 onSubmit={(e) => {
                   e.preventDefault()
                   handleOrderAction()
                 }}
-                className="flex flex-col sm:flex-row gap-3"
+                className="flex flex-col md:flex-row gap-3"
               >
                 <input
                   type="tel"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  placeholder="Enter your phone number"
+                  placeholder="Enter your phone"
                   required
-                  className="flex-1 px-3 sm:px-4 py-2 sm:py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-sm sm:text-lg"
+                  className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent text-base"
                 />
                 <button
                   type="submit"
-                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-4 sm:px-8 py-2 sm:py-3 rounded-xl font-semibold transition-colors whitespace-nowrap text-sm sm:text-lg"
+                  className="bg-yellow-500 hover:bg-yellow-600 text-white px-6 py-3 rounded-xl font-semibold transition-colors whitespace-nowrap text-base"
                 >
-                  <span className="hidden sm:inline">Order by Phone</span>
-                  <span className="sm:hidden">Phone Order</span>
+                  Order by Phone
                 </button>
               </form>
 
-              {/* Checkout Button */}
+              {/* Checkout Button - Optimized */}
               <div className="mt-6 pt-6 border-t border-gray-200">
                 <button
                   onClick={() => {
@@ -565,10 +551,14 @@ export default function ProductDetailPage() {
                     addToCart(cartProduct)
                     router.push('/checkout')
                   }}
-                  className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 sm:px-6 py-3 sm:py-4 rounded-xl font-semibold transition-all duration-200 text-sm sm:text-lg shadow-lg hover:shadow-xl"
+                  disabled={isOutOfStock}
+                  className={`w-full px-4 py-3 sm:py-4 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl ${
+                    isOutOfStock
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-purple-600 hover:bg-purple-700 text-white'
+                  }`}
                 >
-                  <span className="hidden sm:inline">🛒 Proceed to Secure Checkout</span>
-                  <span className="sm:hidden">🛒 Secure Checkout</span>
+                  <span className="text-sm sm:text-base">🛒 Secure Checkout</span>
                 </button>
                 <p className="text-xs sm:text-sm text-gray-600 text-center mt-3">
                   Secure payment • Multiple payment options • Fast delivery
@@ -608,13 +598,64 @@ export default function ProductDetailPage() {
             )}
 
             {activeTab === 'specifications' && product.specifications && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-                {Object.entries(product.specifications).map(([key, value]) => (
-                  <div key={key} className="flex justify-between py-2 sm:py-3 border-b border-gray-100">
-                    <span className="font-semibold text-gray-600 text-sm sm:text-base">{key}</span>
-                    <span className="text-gray-900 text-right text-sm sm:text-base">{value}</span>
+              <div className="space-y-4">
+                <h3 className="text-xl font-bold text-gray-900 mb-4">Product Specifications</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {Object.entries(product.specifications).map(([key, value], index) => (
+                    <div 
+                      key={key} 
+                      className={`flex justify-between items-center p-4 rounded-xl transition-all duration-200 ${
+                        index % 2 === 0 
+                          ? 'bg-blue-50 border border-blue-100' 
+                          : 'bg-green-50 border border-green-100'
+                      } hover:shadow-md`}
+                    >
+                      <span className={`font-semibold text-sm sm:text-base ${
+                        index % 2 === 0 ? 'text-blue-700' : 'text-green-700'
+                      }`}>
+                        {key}
+                      </span>
+                      <span className={`text-right font-medium text-sm sm:text-base ${
+                        index % 2 === 0 ? 'text-blue-900' : 'text-green-900'
+                      }`}>
+                        {value}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Additional Info Cards */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+                  <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-4 rounded-xl shadow-lg">
+                    <div className="flex items-center gap-3">
+                      <ShieldCheckIcon className="w-6 h-6" />
+                      <div>
+                        <h4 className="font-bold text-sm">Quality Guarantee</h4>
+                        <p className="text-xs opacity-90">Premium quality products</p>
+                      </div>
+                    </div>
                   </div>
-                ))}
+                  
+                  <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-4 rounded-xl shadow-lg">
+                    <div className="flex items-center gap-3">
+                      <TruckIcon className="w-6 h-6" />
+                      <div>
+                        <h4 className="font-bold text-sm">Fast Delivery</h4>
+                        <p className="text-xs opacity-90">Quick shipping</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-4 rounded-xl shadow-lg">
+                    <div className="flex items-center gap-3">
+                      <PhoneIcon className="w-6 h-6" />
+                      <div>
+                        <h4 className="font-bold text-sm">Support</h4>
+                        <p className="text-xs opacity-90">24/7 customer care</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
           </div>
