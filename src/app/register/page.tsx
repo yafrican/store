@@ -537,7 +537,7 @@ export default function RegisterPage() {
             </motion.div>
 
             {/* Social Login */}
-            <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 mb-6">
+            {/* <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 mb-6">
               <button
                 type="button"
                 onClick={() => toast.info('Google login coming soon!')}
@@ -554,7 +554,7 @@ export default function RegisterPage() {
                 <FaFacebook className="w-5 h-5" />
                 <span className="text-sm font-medium">Facebook</span>
               </button>
-            </motion.div>
+            </motion.div> */}
 
             {/* Sign In Link */}
             <motion.div variants={itemVariants} className="text-center">

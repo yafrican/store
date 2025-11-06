@@ -406,7 +406,7 @@ function SignInContent() {
             </motion.div>
 
             {/* Social Login */}
-            <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 mb-6">
+            {/* <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 mb-6">
               <button
                 type="button"
                 onClick={handleGoogleLogin}
@@ -423,7 +423,7 @@ function SignInContent() {
                 <FaFacebook className="w-5 h-5" />
                 <span className="text-sm font-medium">Facebook</span>
               </button>
-            </motion.div>
+            </motion.div> */}
 
             {/* Sign Up Link */}
             <motion.div variants={itemVariants} className="text-center space-y-3">
