@@ -2461,7 +2461,6 @@ import { useEffect, useState, Suspense } from 'react'
 import { OrderTicket } from '@/types/ticket'
 import { useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
-import AdminApprovalPanel from '@/components/AdminApprovalPanel'
 
 import {
   Users, Package, ShoppingBag, BarChart, Settings, LogOut,
