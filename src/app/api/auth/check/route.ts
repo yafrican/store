@@ -61,6 +61,8 @@ export async function GET(req: Request) {
           name: user.name,
           email: user.email,
           role: user.role,
+          phone: user.phone, // Make sure this is included
+
           status: user.status || 'active'
         }
       })

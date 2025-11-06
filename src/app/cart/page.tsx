@@ -46,14 +46,35 @@ export default function CartPage() {
     return cartItems.reduce((total, item) => total + item.quantity, 0)
   }
 
-  const handleCheckout = () => {
-    if (cartItems.some(item => item.isDemo)) {
-      alert('This is a demo cart. Checkout functionality will be available with real products.')
-    } else {
-      // Real checkout logic
-      router.push('/checkout')
-    }
+  // In your CartPage component, update the handleCheckout function:
+
+const handleCheckout = async () => {
+  if (cartItems.some(item => item.isDemo)) {
+    alert('This is a demo cart. Checkout functionality will be available with real products.')
+    return
   }
+
+  // Check if user is logged in
+  try {
+    const response = await fetch('/api/auth/check', {
+      method: 'GET',
+      credentials: 'include'
+    })
+    
+    const data = await response.json()
+    
+    if (response.ok && data.loggedIn) {
+      // User is logged in, proceed to checkout
+      router.push('/checkout')
+    } else {
+      // User not logged in, redirect to signin with return URL
+      router.push(`/signin?returnUrl=${encodeURIComponent('/checkout')}`)
+    }
+  } catch (error) {
+    // If auth check fails, redirect to signin
+    router.push(`/signin?returnUrl=${encodeURIComponent('/checkout')}`)
+  }
+}
 
   const continueShopping = () => {
     router.push('/products')

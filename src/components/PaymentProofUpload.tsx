@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useRef } from 'react'
-import { ManualPaymentReceipt } from '../types/receipt'
+import { ManualPaymentReceipt } from '../types/ticket'
 import { CloudArrowUpIcon, XMarkIcon, CheckIcon } from '@heroicons/react/24/outline'
 
 interface PaymentProofUploadProps {

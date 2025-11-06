@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Receipt } from '@/types/receipt'
+import { Receipt } from '@/types/ticket'
 
 // Sample data - replace with your actual database calls
 const sampleReceipts: Receipt[] = [

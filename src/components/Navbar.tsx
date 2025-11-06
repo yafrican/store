@@ -1036,21 +1036,21 @@ export default function Navbar() {
           
           // Handle both response formats
           if (data.loggedIn && data.user) {
-            console.log('✅ User authenticated (new format):', data.user.name)
+            console.log('User authenticated (new format):', data.user.name)
             setUser(data.user)
           } else if (data.user) {
-            console.log('✅ User authenticated (old format):', data.user.name)
+            console.log(' User authenticated (old format):', data.user.name)
             setUser(data.user)
           } else {
-            console.log('❌ No user data in response')
+            console.log(' No user data in response')
             setUser(null)
           }
         } else {
-          console.log('❌ Auth check failed with status:', res.status)
+          console.log(' Auth check failed with status:', res.status)
           setUser(null)
         }
       } catch (err) {
-        console.error('🚨 Auth check failed', err)
+        console.error('Auth check failed', err)
         setUser(null)
       }
     }
@@ -1185,13 +1185,14 @@ export default function Navbar() {
                 >
                   {isSeller ? (
                     <>
-                      <ChartBarIcon className="w-3 h-3" />
+                      <ChartBarIcon className="w-3 h-3   bg-gradient-to-r from-yellow-500 to-amber-500 text-gray-900 rounded-xl font-semibold transition-all duration-200 shadow-lg text-lg justify-center" />
                       <span>Dashboard</span>
                     </>
                   ) : (
                     <>
-                      <TagIcon className="w-3 h-3" />
-                      <span>Sell</span>
+                      <TagIcon className="w-3 h-3   bg-gradient-to-r from-yellow-500 to-amber-500 text-gray-900 rounded-xl font-semibold transition-all duration-200 shadow-lg text-lg justify-center" />
+                     
+                      <span>Sell on yafrican</span>
                     </>
                   )}
                 </Link>
@@ -1215,7 +1216,7 @@ export default function Navbar() {
               </div>
               <button
                 type="submit"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-yellow-500 hover:bg-yellow-600 text-gray-900 px-3 py-1 rounded text-sm font-semibold transition-colors duration-200"
+                className="absolute right-2 top-1/2 transform -translate-y-1/2  text-gray-900 px-3 py-1 rounded text-lg font-semibold transition-colors duration-200"
               >
                 <MagnifyingGlassIcon className="w-5 h-5" />
               </button>
@@ -1411,7 +1412,7 @@ export default function Navbar() {
                   className="hidden md:flex items-center gap-1 xl:gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-gray-900 px-3 xl:px-4 py-2 xl:py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 border border-yellow-400 text-sm"
                 >
                   <TagIcon className="w-4 h-4 xl:w-5 xl:h-5" />
-                  <span className="hidden xl:inline">Sell</span>
+                  <span className="hidden xl:inline  text-gray-900  font-semibold transition-all duration-200 shadow-lg text-lg justify-center">Sell</span>
                 </Link>
               )}
 

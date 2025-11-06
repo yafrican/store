@@ -367,7 +367,7 @@ export default function SettingsPage() {
               
               <button
                 onClick={handleLogout}
-                className="px-6 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition-colors duration-300 shadow-lg hover:shadow-xl"
+                className="px-6 py-3 mb-12 bg-red-600 hover:bg-red-700 text-white rounded-xl font-semibold transition-colors duration-300 shadow-lg hover:shadow-xl"
               >
                 Log Out
               </button>

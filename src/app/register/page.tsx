@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { FcGoogle } from 'react-icons/fc'
 import { FaFacebook, FaEye, FaEyeSlash, FaCheck, FaUser, FaStore } from 'react-icons/fa'
+import { toast } from 'react-toastify'
 
 export default function RegisterPage() {
   const [formData, setFormData] = useState({
@@ -35,19 +36,48 @@ export default function RegisterPage() {
     setError('')
 
     // Basic validation
-    if (!formData.name) return setError('Name is required')
-    if (!formData.email) return setError('Email is required')
-    if (!formData.phone) return setError('Phone number is required')
-    if (!formData.password) return setError('Password is required')
-    if (formData.password !== formData.confirmPassword) return setError('Passwords do not match')
+    if (!formData.name) {
+      toast.error('Name is required')
+      return setError('Name is required')
+    }
+    if (!formData.email) {
+      toast.error('Email is required')
+      return setError('Email is required')
+    }
+    if (!formData.phone) {
+      toast.error('Phone number is required')
+      return setError('Phone number is required')
+    }
+    if (!formData.password) {
+      toast.error('Password is required')
+      return setError('Password is required')
+    }
+    if (formData.password.length < 6) {
+      toast.error('Password must be at least 6 characters')
+      return setError('Password must be at least 6 characters')
+    }
+    if (formData.password !== formData.confirmPassword) {
+      toast.error('Passwords do not match')
+      return setError('Passwords do not match')
+    }
 
     // Seller-specific validation
     if (role === 'seller') {
-      if (!formData.storeName) return setError('Store name is required for sellers')
-      if (!formData.address) return setError('Address is required for sellers')
+      if (!formData.storeName) {
+        toast.error('Store name is required for sellers')
+        return setError('Store name is required for sellers')
+      }
+      if (!formData.address) {
+        toast.error('Address is required for sellers')
+        return setError('Address is required for sellers')
+      }
     }
 
     setLoading(true)
+    
+    // Show loading toast
+    const loadingToast = toast.loading('Creating your account...')
+
     try {
       // Prepare data for API - only send relevant fields based on role
       const submitData = {
@@ -76,9 +106,26 @@ export default function RegisterPage() {
       const data = await res.json()
       
       if (!res.ok) {
+        // Update loading toast to error
+        toast.update(loadingToast, {
+          render: data.error || 'Registration failed',
+          type: 'error',
+          isLoading: false,
+          autoClose: 5000
+        })
         setError(data.error || 'Registration failed')
       } else {
-        alert(data.message)
+        // Update loading toast to success
+        toast.update(loadingToast, {
+          render: `🎉 Successfully registered as ${role}!`,
+          type: 'success',
+          isLoading: false,
+          autoClose: 5000
+        })
+        
+        // Show additional success message
+        toast.success(`Welcome to Yafrican! ${role === 'seller' ? 'Your seller account is ready.' : 'Start shopping now!'}`)
+        
         // Reset form
         setFormData({
           name: '',
@@ -94,6 +141,13 @@ export default function RegisterPage() {
       }
     } catch (error) {
       console.error('Registration error:', error)
+      // Update loading toast to error
+      toast.update(loadingToast, {
+        render: 'Something went wrong. Please try again.',
+        type: 'error',
+        isLoading: false,
+        autoClose: 5000
+      })
       setError('Something went wrong. Please try again.')
     }
     setLoading(false)
@@ -116,6 +170,24 @@ export default function RegisterPage() {
       opacity: 1,
       transition: {
         duration: 0.5
+      }
+    }
+  }
+
+  const sellerFieldsVariants = {
+    hidden: { 
+      opacity: 0, 
+      height: 0,
+      transition: {
+        duration: 0.3
+      }
+    },
+    visible: { 
+      opacity: 1, 
+      height: "auto",
+      transition: {
+        duration: 0.3,
+        staggerChildren: 0.1
       }
     }
   }
@@ -246,13 +318,13 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setRole('customer')}
-                    className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+                    className={`p-4 rounded-xl border-2 transition-all duration-300 flex flex-col items-center ${
                       role === 'customer'
-                        ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 shadow-md'
+                        ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 shadow-md scale-105'
                         : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:border-yellow-300'
                     }`}
                   >
-                    <FaUser className={`mx-auto mb-2 text-lg ${role === 'customer' ? 'text-yellow-500' : 'text-gray-400'}`} />
+                    <FaUser className={`mb-2 text-lg ${role === 'customer' ? 'text-yellow-500' : 'text-gray-400'}`} />
                     <span className="font-semibold">Shop</span>
                     <p className="text-xs mt-1 opacity-75">As Customer</p>
                   </button>
@@ -260,13 +332,13 @@ export default function RegisterPage() {
                   <button
                     type="button"
                     onClick={() => setRole('seller')}
-                    className={`p-4 rounded-xl border-2 transition-all duration-300 ${
+                    className={`p-4 rounded-xl border-2 transition-all duration-300 flex flex-col items-center ${
                       role === 'seller'
-                        ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 shadow-md'
+                        ? 'border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 shadow-md scale-105'
                         : 'border-gray-200 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:border-yellow-300'
                     }`}
                   >
-                    <FaStore className={`mx-auto mb-2 text-lg ${role === 'seller' ? 'text-yellow-500' : 'text-gray-400'}`} />
+                    <FaStore className={`mb-2 text-lg ${role === 'seller' ? 'text-yellow-500' : 'text-gray-400'}`} />
                     <span className="font-semibold">Sell</span>
                     <p className="text-xs mt-1 opacity-75">As Seller</p>
                   </button>
@@ -324,57 +396,66 @@ export default function RegisterPage() {
                 />
               </motion.div>
 
-              {/* Seller-specific Fields */}
-              {role === 'seller' && (
-                <>
-                  <motion.div variants={itemVariants}>
-                    <label htmlFor="storeName" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                      Store Name *
-                    </label>
-                    <input
-                      id="storeName"
-                      name="storeName"
-                      type="text"
-                      value={formData.storeName}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                      placeholder="Your store name"
-                      required
-                    />
-                  </motion.div>
+              {/* Seller-specific Fields with Smooth Animation */}
+              <AnimatePresence>
+                {role === 'seller' && (
+                  <motion.div
+                    key="seller-fields"
+                    variants={sellerFieldsVariants}
+                    initial="hidden"
+                    animate="visible"
+                    exit="hidden"
+                    className="space-y-6 overflow-hidden"
+                  >
+                    <motion.div variants={itemVariants}>
+                      <label htmlFor="storeName" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                        Store Name *
+                      </label>
+                      <input
+                        id="storeName"
+                        name="storeName"
+                        type="text"
+                        value={formData.storeName}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                        placeholder="Your store name"
+                        required
+                      />
+                    </motion.div>
 
-                  <motion.div variants={itemVariants}>
-                    <label htmlFor="address" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                      Business Address *
-                    </label>
-                    <input
-                      id="address"
-                      name="address"
-                      type="text"
-                      value={formData.address}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                      placeholder="Your business address"
-                      required
-                    />
-                  </motion.div>
+                    <motion.div variants={itemVariants}>
+                      <label htmlFor="address" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                        Business Address *
+                      </label>
+                      <input
+                        id="address"
+                        name="address"
+                        type="text"
+                        value={formData.address}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                        placeholder="Your business address"
+                        required
+                      />
+                    </motion.div>
 
-                  <motion.div variants={itemVariants}>
-                    <label htmlFor="paymentMethod" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                      Preferred Payment Method
-                    </label>
-                    <input
-                      id="paymentMethod"
-                      name="paymentMethod"
-                      type="text"
-                      value={formData.paymentMethod}
-                      onChange={handleChange}
-                      className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                      placeholder="Bank transfer, Mobile money, etc."
-                    />
+                    <motion.div variants={itemVariants}>
+                      <label htmlFor="paymentMethod" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                        Preferred Payment Method
+                      </label>
+                      <input
+                        id="paymentMethod"
+                        name="paymentMethod"
+                        type="text"
+                        value={formData.paymentMethod}
+                        onChange={handleChange}
+                        className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                        placeholder="Bank transfer, Mobile money, etc."
+                      />
+                    </motion.div>
                   </motion.div>
-                </>
-              )}
+                )}
+              </AnimatePresence>
 
               {/* Password Fields */}
               <motion.div variants={itemVariants}>
@@ -459,7 +540,7 @@ export default function RegisterPage() {
             <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 mb-6">
               <button
                 type="button"
-                onClick={() => alert('Google login clicked')}
+                onClick={() => toast.info('Google login coming soon!')}
                 className="flex items-center justify-center space-x-2 p-3 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300"
               >
                 <FcGoogle className="w-5 h-5" />
@@ -467,7 +548,7 @@ export default function RegisterPage() {
               </button>
               <button
                 type="button"
-                onClick={() => alert('Facebook login clicked')}
+                onClick={() => toast.info('Facebook login coming soon!')}
                 className="flex items-center justify-center space-x-2 p-3 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300 text-blue-600 dark:text-blue-400"
               >
                 <FaFacebook className="w-5 h-5" />

@@ -106,7 +106,7 @@ export default function SellerSettings() {
 
                 <div className="flex justify-end pt-4">
                   <Button type="submit" disabled={loading} className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white shadow-lg">
-                    {loading ? "Saving..." : "💾 Save Settings"}
+                    {loading ? "Saving..." : " Save Settings"}
                   </Button>
                 </div>
               </form>

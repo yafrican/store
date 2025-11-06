@@ -1,3 +1,4 @@
+// C:\Users\hp\Desktop\nextjs pro\yafrican\src\app\order-success\page.tsx
 'use client'
 
 import { useEffect } from 'react'

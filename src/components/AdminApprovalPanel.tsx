@@ -2,7 +2,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Receipt, ManualPaymentReceipt } from '../types/receipt'
+import { Receipt, ManualPaymentReceipt } from '../types/ticket'
 
 interface AdminApprovalPanelProps {
   receipts: Receipt[]

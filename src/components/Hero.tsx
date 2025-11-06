@@ -1113,10 +1113,10 @@ export default function Hero() {
       <div className="max-w-8xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* MOBILE ONLY: Simple Image Carousel with Links */}
-        <div className="lg:hidden">
-          <div className="relative bg-gray-800 rounded-2xl shadow-2xl overflow-hidden h-[300px]">
+        <div className="lg:hidden ">
+          <div className="relative bg-gray-800 rounded-2xl shadow-2xl overflow-hidden h-[100px]">
             {/* Slides */}
-            <div className="relative h-full">
+            <div className="relative h-[100px]">
               {sliderImages.map((slide, index) => (
                 <Link
                   key={index}
@@ -1134,7 +1134,7 @@ export default function Hero() {
                   
                   {/* Simple text overlay for mobile */}
                   <div className="absolute bottom-4 left-4 right-4">
-                    <div className="bg-black/60 backdrop-blur-sm rounded-xl p-4">
+                    <div className=" rounded-xl p-4">
                       <h3 className="text-white font-bold text-lg mb-1">{slide.title}</h3>
                       <p className="text-gray-200 text-sm mb-3">{slide.subtitle}</p>
                       <span className="inline-flex items-center gap-1 bg-gradient-to-r from-yellow-500 to-amber-500 text-gray-900 px-4 py-2 rounded-lg font-bold text-sm">
@@ -1164,7 +1164,7 @@ export default function Hero() {
             </button>
 
             {/* Mobile Slide Indicators - SMALLER DOTS */}
-            <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 flex gap-1.5 z-10">
+            {/* <div className="absolute bottom-16 left-1/2 transform -translate-x-1/2 flex gap-1.5 z-10">
               {sliderImages.map((_, index) => (
                 <button
                   key={index}
@@ -1181,7 +1181,7 @@ export default function Hero() {
                   aria-label={`Go to slide ${index + 1}`}
                 />
               ))}
-            </div>
+            </div> */}
           </div>
         </div>
 
