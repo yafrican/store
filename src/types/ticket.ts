@@ -30,7 +30,7 @@ export interface OrderTicket {
   paymentMethod: string
   bankDetails?: BankDetails
   timestamp: string
-  status: 'pending' | 'confirmed' | 'processing' | 'completed' | 'approved' | 'rejected' // Add these
+status: string
   paymentProof?: {
     imageUrl: string
     uploadedAt: string

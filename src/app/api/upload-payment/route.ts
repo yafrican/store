@@ -60,13 +60,13 @@ export async function POST(req: Request) {
 // Function to notify admin about payment proof
 async function notifyAdminAboutPaymentProof(order: any) {
   try {
-    console.log('📸 PAYMENT PROOF UPLOADED:')
-    console.log('📦 Order Number:', order.orderNumber)
-    console.log('👤 Customer:', order.customerInfo.fullName)
-    console.log('💰 Total Amount:', order.totalAmount)
-    console.log('🏦 Payment Method:', order.paymentMethod)
-    console.log('⏰ Uploaded:', order.updatedAt)
-    console.log('🔗 Payment Proof Available for Review')
+    console.log('PAYMENT PROOF UPLOADED:')
+    console.log('Order Number:', order.orderNumber)
+    console.log('Customer:', order.customerInfo.fullName)
+    console.log('Total Amount:', order.totalAmount)
+    console.log('Payment Method:', order.paymentMethod)
+    console.log('Uploaded:', order.updatedAt)
+    console.log('Payment Proof Available for Review')
     
     // TODO: Implement other notification methods
     // - Email to admin with payment proof image
