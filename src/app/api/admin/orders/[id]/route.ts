@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET!
 // GET single order details
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check admin authentication
@@ -36,7 +36,9 @@ export async function GET(
 
     await connectMongo()
 
-    const order = await Order.findById(params.id)
+    // Await the params
+    const { id } = await context.params
+    const order = await Order.findById(id)
 
     if (!order) {
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
@@ -56,7 +58,7 @@ export async function GET(
 // UPDATE order status (approve/reject)
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   try {
     // Check admin authentication
@@ -89,6 +91,9 @@ export async function PUT(
 
     await connectMongo()
 
+    // Await the params
+    const { id } = await context.params
+
     const updateData: any = { 
       status,
       updatedAt: new Date()
@@ -100,17 +105,17 @@ export async function PUT(
 
     // If confirming payment, mark payment as verified
     if (status === 'confirmed') {
-  updateData.$set = {
-    'paymentProof.verified': true,
-    'paymentProof.verifiedBy': payload.name,
-    'paymentProof.verifiedAt': new Date()
-  }
-  updateData.adminVerified = true
-  updateData.adminVerifiedAt = new Date()
-}
+      updateData.$set = {
+        'paymentProof.verified': true,
+        'paymentProof.verifiedBy': payload.name,
+        'paymentProof.verifiedAt': new Date()
+      }
+      updateData.adminVerified = true
+      updateData.adminVerifiedAt = new Date()
+    }
 
     const order = await Order.findByIdAndUpdate(
-      params.id,
+      id,
       updateData,
       { new: true }
     )
