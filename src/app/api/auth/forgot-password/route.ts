@@ -1,3 +1,4 @@
+// /api/auth/forgot-password/route.ts
 import { NextResponse } from 'next/server'
 import connectMongo from '@/lib/mongodb'
 import User from '@/models/User'
@@ -35,8 +36,9 @@ export async function POST(req: Request) {
     user.resetTokenExpiry = resetTokenExpiry
     await user.save()
 
-    // Create reset URL
-    const resetUrl = `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/reset-password?token=${resetToken}`
+    // FIXED: Create reset URL that works for both local and production
+    const baseUrl = process.env.URL || 'http://localhost:3000'
+    const resetUrl = `${baseUrl}/reset-password?token=${resetToken}`
 
     // Send email
     try {
