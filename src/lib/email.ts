@@ -1,35 +1,31 @@
 // src/lib/email.ts
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const transporter = nodemailer.createTransport({
+  service: 'gmail',
+  auth: {
+    user: process.env.GMAIL_USER,
+    pass: process.env.GMAIL_APP_PASSWORD
+  }
+})
 
 interface SendEmailParams {
   to: string
   subject: string
   html: string
-  text?: string
 }
 
-export async function sendEmail({ to, subject, html, text }: SendEmailParams) {
+export async function sendEmail({ to, subject, html }: SendEmailParams) {
   try {
-    const { data, error } = await resend.emails.send({
-      // Use Resend's default verified domain for now
-      // from: 'Yafrican <noreply@yafrican.com>', // or any @yafrican.com address
-
-      from: 'Yafrican <onboarding@resend.dev>',
-      to: [to],
+    const result = await transporter.sendMail({
+      from: '"Yafrican" <asayemax1921@gmail.com>', // Hardcoded for consistent display
+      to,
       subject,
       html,
-      text: text || html.replace(/<[^>]*>/g, ''),
     })
-
-    if (error) {
-      console.error('❌ Email sending failed:', error)
-      throw error
-    }
-
-    console.log('✅ Email sent to:', to, 'ID:', data?.id)
-    return data
+    
+    console.log('✅ Email sent to:', to)
+    return result
   } catch (error) {
     console.error('❌ Email sending failed:', error)
     throw error
