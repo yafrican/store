@@ -1,4 +1,3 @@
-// app/api/products/related/route.ts
 import { NextRequest, NextResponse } from 'next/server'
 import mongoose from 'mongoose'
 import Product from '@/models/Product'

@@ -1,4 +1,3 @@
-// src/app/api/products/route.ts - COMPLETELY FIXED
 import { NextResponse } from 'next/server'
 import connectMongo from '@/lib/mongodb'
 import Product from '@/models/Product'
