@@ -2927,7 +2927,7 @@ Generated: ${new Date().toLocaleString()}
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <motion.div
             animate={{ rotate: 360 }}
@@ -2942,14 +2942,14 @@ Generated: ${new Date().toLocaleString()}
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
+      <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center">
         <div className="text-center">
           <User className="w-20 h-20 text-gray-400 mx-auto mb-4" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Profile Not Found</h2>
           <p className="text-gray-600 dark:text-gray-300 mb-6">Please log in to view your profile.</p>
           <button
             onClick={() => router.push('/signin')}
-            className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-semibold hover:from-yellow-600 hover:to-amber-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+            className="px-6 py-3 bg-linear-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-semibold hover:from-yellow-600 hover:to-amber-600 transition-all duration-300 shadow-lg hover:shadow-xl"
           >
             Sign In to Continue
           </button>
@@ -2959,7 +2959,7 @@ Generated: ${new Date().toLocaleString()}
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
       <ToastContainer position="top-right" theme="colored" />
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -2997,7 +2997,7 @@ Generated: ${new Date().toLocaleString()}
               {/* User Card */}
               <div className="text-center mb-6">
                 <div className="relative inline-block mb-4">
-                  <div className="w-20 h-20 bg-gradient-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
+                  <div className="w-20 h-20 bg-linear-to-r from-yellow-400 to-amber-500 rounded-full flex items-center justify-center text-white text-2xl font-bold shadow-lg">
                     {user.name.charAt(0).toUpperCase()}
                   </div>
                   <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-1.5 border-2 border-white dark:border-gray-800">
@@ -3113,7 +3113,7 @@ Generated: ${new Date().toLocaleString()}
                   onClick={() => setActiveTab('profile')}
                   className={`flex-1 py-3 px-4 text-center rounded-xl font-semibold transition-all duration-300 ${
                     activeTab === 'profile'
-                      ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg'
+                      ? 'bg-linear-to-r from-yellow-500 to-amber-500 text-white shadow-lg'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
@@ -3124,7 +3124,7 @@ Generated: ${new Date().toLocaleString()}
                   onClick={() => setActiveTab('tickets')}
                   className={`flex-1 py-3 px-4 text-center rounded-xl font-semibold transition-all duration-300 ${
                     activeTab === 'tickets'
-                      ? 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white shadow-lg'
+                      ? 'bg-linear-to-r from-yellow-500 to-amber-500 text-white shadow-lg'
                       : 'text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
@@ -3154,7 +3154,7 @@ Generated: ${new Date().toLocaleString()}
                     className={`flex items-center gap-2 px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
                       editing
                         ? 'bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                        : 'bg-gradient-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600 shadow-lg hover:shadow-xl'
+                        : 'bg-linear-to-r from-yellow-500 to-amber-500 text-white hover:from-yellow-600 hover:to-amber-600 shadow-lg hover:shadow-xl'
                     }`}
                   >
                     <Edit3 className="w-4 h-4" />
@@ -3300,7 +3300,7 @@ Generated: ${new Date().toLocaleString()}
                     <button
                       onClick={handleSave}
                       disabled={saving}
-                      className="flex items-center gap-3 px-8 py-3 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-semibold hover:from-yellow-600 hover:to-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl"
+                      className="flex items-center gap-3 px-8 py-3 bg-linear-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-semibold hover:from-yellow-600 hover:to-amber-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300 shadow-lg hover:shadow-xl"
                     >
                       <Save className="w-5 h-5" />
                       {saving ? (
@@ -3342,7 +3342,7 @@ Generated: ${new Date().toLocaleString()}
                     {userOrders.map((order) => (
                       <div key={order._id} className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
                         {/* Order Header */}
-                        <div className="bg-gradient-to-r from-gray-900 to-gray-800 p-6 text-white">
+                        <div className="bg-linear-to-r from-gray-900 to-gray-800 p-6 text-white">
                           <div className="flex justify-between items-center">
                             <div>
                               <h3 className="text-xl font-bold">Order #{order.orderNumber}</h3>
@@ -3433,7 +3433,7 @@ Generated: ${new Date().toLocaleString()}
                             <h4 className="font-semibold text-gray-900 dark:text-white mb-3">Items</h4>
                             <div className="flex gap-3 overflow-x-auto pb-2">
                               {order.items.slice(0, 3).map((item, index) => (
-                                <div key={index} className="flex-shrink-0 w-20 text-center mb-3">
+                                <div key={index} className="shrink-0 w-20 text-center mb-3">
                                   <img
                                     src={item.image}
                                     alt={item.name}
@@ -3448,7 +3448,7 @@ Generated: ${new Date().toLocaleString()}
                                 </div>
                               ))}
                               {order.items.length > 3 && (
-                                <div className="flex-shrink-0 w-20 text-center flex items-center justify-center">
+                                <div className="shrink-0 w-20 text-center flex items-center justify-center">
                                   <div className="bg-gray-100 dark:bg-gray-700 rounded-lg w-16 h-16 flex items-center justify-center">
                                     <span className="text-lg font-bold text-gray-600 dark:text-gray-300">
                                       +{order.items.length - 3}
@@ -3474,7 +3474,7 @@ Generated: ${new Date().toLocaleString()}
                     </p>
                     <button
                       onClick={() => router.push('/products')}
-                      className="px-6 py-3 bg-gradient-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-semibold hover:from-yellow-600 hover:to-amber-600 transition-all duration-300 shadow-lg hover:shadow-xl"
+                      className="px-6 py-3 bg-linear-to-r from-yellow-500 to-amber-500 text-white rounded-xl font-semibold hover:from-yellow-600 hover:to-amber-600 transition-all duration-300 shadow-lg hover:shadow-xl"
                     >
                       Start Shopping
                     </button>

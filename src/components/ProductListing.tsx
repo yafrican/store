@@ -1439,7 +1439,7 @@ export default function ProductListingMinimal() {
     let mounted = true
     async function fetchProducts() {
       try {
-        console.log('🔄 Fetching products from API...')
+        console.log('Fetching products from API...')
         const res = await fetch('/api/products', { 
           method: 'GET',
           headers: {
@@ -1449,7 +1449,7 @@ export default function ProductListingMinimal() {
         })
         
         if (!res.ok) {
-          console.warn(`❌ API returned ${res.status}`)
+          console.warn(` API returned ${res.status}`)
           throw new Error(`Failed to fetch products: ${res.status}`)
         }
 
@@ -1554,7 +1554,7 @@ export default function ProductListingMinimal() {
 
   return (
     <section className="min-h-screen bg-white dark:bg-gray-900 py-6 sm:py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-8xl mx-auto px-4 sm:px-6">
         {/* Header - Hidden on mobile */}
         <header className="mb-8 sm:mb-12 text-center hidden sm:block">
           <h1 className="text-3xl font-extrabold text-gray-900 dark:text-white tracking-tight">Curated Collection</h1>
@@ -1572,7 +1572,7 @@ export default function ProductListingMinimal() {
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 sm:gap-6">
               {visibleProducts.map((product) => {
                 const isInWishlistState = isInWishlist(product._id)
                 const isOutOfStock = product.stock === 0
@@ -1733,7 +1733,7 @@ export default function ProductListingMinimal() {
                         >
                           <ShoppingBagIcon className="w-4 h-4" />
                           <span className="sm:hidden">Buy</span>
-                          <span className="hidden sm:inline">Add to Cart</span>
+                          <span className="hidden sm:inline">Buy</span>
                         </button>
                       </div>
                     </div>

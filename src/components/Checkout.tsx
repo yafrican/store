@@ -1,4 +1,3 @@
-// // components/Checkout.tsx
 // 'use client'
 
 // import { useState, useEffect } from 'react'
@@ -592,7 +591,6 @@
 //   )
 // }
 
-// components/Checkout.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
