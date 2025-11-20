@@ -4394,7 +4394,7 @@ useEffect(() => {
 
       } catch (error) {
         console.error('❌ Failed to fetch data:', error)
-        router.push('/admin/login')
+        router.push('/signin')
       } finally {
         setLoading(false)
       }
@@ -4406,7 +4406,7 @@ useEffect(() => {
   const handleLogout = async () => {
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
-      router.push('/admin/login')
+      router.push('/signin')
     } catch (error) {
       console.error('Logout error:', error)
     }

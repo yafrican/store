@@ -76,7 +76,7 @@ export async function sendEmail({ to, subject, html }: SendEmailParams) {
     console.log(` Using SMTP user: ${process.env.BREVO_SMTP_USER}`)
 
     const result = await transporter.sendMail({
-from: '"Yafrican" <asayemax1921@gmail.com>', // Use your verified Gmail
+from: '"Yafrican" <yafricanstore@gmail.com>', // Use your verified Gmail
       to,
       subject,
       html,
