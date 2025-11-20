@@ -351,7 +351,7 @@ const RelatedProductsSection = () => {
           return (
             <div
               key={relatedProduct._id}
-              className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 flex flex-col relative overflow-hidden"
+              className="group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm hover:shadow-md transition-all duration-300 flex flex-col relative overflow-hidden mb-16"
             >
               {/* Badges */}
               <div className="absolute top-2 left-2 z-10 flex flex-col gap-1">
