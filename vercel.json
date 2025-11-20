@@ -1,8 +1,6 @@
 {
-  "version": 2,
-  "buildCommand": "npm rebuild sharp && npm rebuild lightningcss && next build",
-  "installCommand": "npm install --force",
-  "env": {
-    "NODE_ENV": "production"
-  }
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "framework": "nextjs"
 }
