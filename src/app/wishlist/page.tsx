@@ -366,7 +366,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import { useWishlist } from '../contexts/WishlistContext'
-
+import { toast } from 'react-toastify'
 export default function WishlistPage() {
   const router = useRouter()
   const { 
@@ -382,11 +382,24 @@ export default function WishlistPage() {
     router.push(`/products/${product.slug || product._id}`)
   }
 
-  const handleMoveToCart = (product: any) => {
-    moveToCart(product)
-    // Optional: Redirect to cart page after moving
-    // router.push('/cart')
-  }
+const handleMoveToCart = (product: any) => {
+  moveToCart(product)
+  
+  // Show success message
+  toast.success(`${product.name} moved to cart!`, {
+    position: "top-right",
+    autoClose: 3000,
+    hideProgressBar: false,
+    closeOnClick: true,
+    pauseOnHover: true,
+    draggable: true,
+  })
+  
+  // Redirect to cart page after a short delay
+  setTimeout(() => {
+    router.push('/cart')
+  }, 1000)
+}
 
   const totalValue = wishlistItems.reduce((sum, item) => {
     const price = item.isOnSale && item.salePrice ? item.salePrice : item.price
@@ -395,7 +408,7 @@ export default function WishlistPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8">
+      <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8">
         <div className="max-w-8xl mx-auto px-4">
           {/* Header Skeleton */}
           <div className="text-center mb-12 animate-pulse">
@@ -420,15 +433,15 @@ export default function WishlistPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8">
+    <div className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 py-8">
       <div className="max-w-8xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-red-500 to-pink-600 rounded-full mb-6 shadow-2xl">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-r from-red-500 to-pink-600 rounded-full mb-6 shadow-2xl">
             <HeartSolidIcon className="w-10 h-10 text-white" />
           </div>
           
-          <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-red-500 to-pink-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-4xl lg:text-5xl font-bold bg-linear-to-r from-red-500 to-pink-600 bg-clip-text text-transparent mb-4">
             My Wishlist
           </h1>
           
@@ -648,15 +661,15 @@ export default function WishlistPage() {
                         View Details
                       </button>
                       
-                      {!isOutOfStock && (
-                        <button 
-                          className="w-full inline-flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-600 hover:border-yellow-500 dark:hover:border-yellow-400 text-gray-700 dark:text-gray-300 hover:text-yellow-600 dark:hover:text-yellow-400 px-4 py-3 rounded-xl transition-all duration-200 font-medium group/cart"
-                          onClick={() => handleMoveToCart(product)}
-                        >
-                          <ShoppingCartIcon className="w-4 h-4" />
-                          Move to Cart
-                        </button>
-                      )}
+                  {!isOutOfStock && (
+          <button 
+            className="w-full inline-flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-600 hover:border-yellow-500 dark:hover:border-yellow-400 text-gray-700 dark:text-gray-300 hover:text-yellow-600 dark:hover:text-yellow-400 px-4 py-3 rounded-xl transition-all duration-200 font-medium group/cart"
+            onClick={() => handleMoveToCart(product)}
+          >
+            <ShoppingCartIcon className="w-4 h-4" />
+            Move to Cart
+          </button>
+        )}
                     </div>
                   </div>
                 </div>
@@ -667,7 +680,7 @@ export default function WishlistPage() {
 
         {/* Additional Features */}
         {wishlistCount > 0 && (
-          <div className="mt-12 bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-200 dark:border-gray-700">
+          <div className="mt-12 bg-white dark:bg-gray-800 rounded-2xl p-8 border border-gray-200 dark:border-gray-700 mb-16">
             <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-6 text-center">
               Wishlist Features
             </h3>

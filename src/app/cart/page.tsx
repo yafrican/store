@@ -137,7 +137,7 @@
 //       <div className="max-w-7xl mx-auto px-4">
 //         {/* Header */}
 //         <div className="text-center mb-12">
-//           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-yellow-500 to-amber-600 rounded-full mb-6 shadow-2xl">
+//           <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-r from-yellow-500 to-amber-600 rounded-full mb-6 shadow-2xl">
 //             <ShoppingBagIcon className="w-10 h-10 text-white" />
 //           </div>
           
@@ -606,11 +606,11 @@ export default function CartPage() {
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-12">
-          <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-yellow-500 to-amber-600 rounded-full mb-6 shadow-2xl">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-linear-to-r from-yellow-500 to-amber-600 rounded-full mb-6 shadow-2xl">
             <ShoppingBagIcon className="w-10 h-10 text-white" />
           </div>
           
-          <h1 className="text-4xl lg:text-5xl font-bold bg-gradient-to-r from-yellow-500 to-amber-600 bg-clip-text text-transparent mb-4">
+          <h1 className="text-4xl lg:text-5xl font-bold bg-linear-to-r from-yellow-500 to-amber-600 bg-clip-text text-transparent mb-4">
             Shopping Cart
           </h1>
 
@@ -728,7 +728,7 @@ export default function CartPage() {
                       <div key={item.id} className="p-6">
                         <div className="flex flex-col sm:flex-row gap-4">
                           {/* Product Image */}
-                          <div className="flex-shrink-0">
+                          <div className="shrink-0">
                             <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-xl overflow-hidden cursor-pointer"
                                  onClick={() => viewProduct(item)}>
                               <img
@@ -877,7 +877,7 @@ export default function CartPage() {
                 {/* Checkout Button */}
                 <button
                   onClick={handleCheckout}
-                  className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-gray-900 py-4 rounded-xl font-bold text-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
+                  className="w-full bg-linear-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-gray-900 py-4 rounded-xl font-bold text-lg transition-all duration-200 shadow-lg hover:shadow-xl flex items-center justify-center gap-2"
                 >
                   <CreditCardIcon className="w-5 h-5" />
                   Proceed to Checkout
@@ -890,7 +890,7 @@ export default function CartPage() {
               </div>
 
               {/* Promo Code */}
-              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mt-6">
+              <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 mt-6 mb-16">
                 <h3 className="font-semibold text-gray-900 dark:text-white mb-3">
                   Have a Promo Code?
                 </h3>

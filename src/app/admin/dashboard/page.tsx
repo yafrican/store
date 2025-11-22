@@ -2332,7 +2332,7 @@ useEffect(() => {
             </div>
 
             {/* Content Sections */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto mb-16">
               {activeSection === 'overview' && (
                 <div>
                   <StatsCards stats={stats} />

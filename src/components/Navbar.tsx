@@ -272,8 +272,8 @@ export default function Navbar() {
 
   return (
     <>
-  <div className="bg-gradient-to-r from-yellow-500 to-amber-500 text-gray-900 text-sm py-2 px-4 text-center font-semibold hidden lg:block">
-        🚚fast delivery offer.
+  <div className="bg-linear-to-r from-yellow-500 to-amber-500 text-gray-900 text-sm py-2 px-4 text-center font-semibold hidden lg:block">
+        🚚Enjoy fast and efficient service with instant booking confirmation.
       </div>
       {/* MOBILE NAVIGATION - App-like interface */}
       <nav className="bg-gray-900 sticky top-0 z-40 border-b border-gray-700 lg:hidden">
@@ -281,7 +281,7 @@ export default function Navbar() {
           {/* Top Row: Logo and Sell/Dashboard Button */}
           <div className="flex items-center justify-between mb-3">
             {/* Logo */}
-            <Link href="/" className="flex items-center flex-shrink-0">
+            <Link href="/" className="flex items-center shrink-0">
               <div className="relative w-28 h-7">
                 <Image
                   src="/logo.png"
@@ -303,12 +303,12 @@ export default function Navbar() {
                 >
                   {isSeller ? (
                     <>
-                      <ChartBarIcon className="w-3 h-3   bg-gradient-to-r from-yellow-500 to-amber-500 text-gray-900 rounded-xl font-semibold transition-all duration-200 shadow-lg text-lg justify-center" />
+                      <ChartBarIcon className="w-3 h-3   bg-linear-to-r from-yellow-500 to-amber-500 text-gray-900 rounded-xl font-semibold transition-all duration-200 shadow-lg text-lg justify-center" />
                       <span>Dashboard</span>
                     </>
                   ) : (
                     <>
-                      <TagIcon className="w-3 h-3   bg-gradient-to-r from-yellow-500 to-amber-500 text-gray-900 rounded-xl font-semibold transition-all duration-200 shadow-lg text-lg justify-center" />
+                      <TagIcon className="w-3 h-3   bg-linear-to-r from-yellow-500 to-amber-500 text-gray-900 rounded-xl font-semibold transition-all duration-200 shadow-lg text-lg justify-center" />
                      
                       <span>Sell on yafrican</span>
                     </>
@@ -353,7 +353,7 @@ export default function Navbar() {
             {/* Logo and Navigation */}
             <div className="flex items-center space-x-4 lg:space-x-8 xl:space-x-10">
               {/* Logo */}
-              <Link href="/" className="flex items-center flex-shrink-0">
+              <Link href="/" className="flex items-center shrink-0">
                 <div className="relative w-32 lg:w-40 xl:w-48 h-8 lg:h-10 xl:h-12">
                   <Image
                     src="/logo.png"
@@ -389,7 +389,7 @@ export default function Navbar() {
               <form onSubmit={handleSearch} className="flex w-full" role="search">
                 <div className="flex w-full bg-white rounded-xl border-2 border-gray-600 focus-within:border-yellow-500 focus-within:ring-4 focus-within:ring-yellow-500/20 transition-all duration-300 group hover:border-yellow-400 shadow-lg">
                   {/* Compact Category Dropdown */}
-                  <div className="relative flex-shrink-0" ref={categoryRef}>
+                  <div className="relative shrink-0" ref={categoryRef}>
                     <button
                       type="button"
                       onClick={() => setIsCategoryOpen(!isCategoryOpen)}
@@ -448,7 +448,7 @@ export default function Navbar() {
             </div>
 
             {/* Right side actions */}
-            <div className="flex items-center space-x-2 lg:space-x-3 xl:space-x-4 flex-shrink-0">
+            <div className="flex items-center space-x-2 lg:space-x-3 xl:space-x-4 shrink-0">
               {/* Theme Toggle */}
               <div className="relative" ref={themeRef}>
                 <button
@@ -527,7 +527,7 @@ export default function Navbar() {
               {!isSeller && !isAdmin && (
                 <Link
                   href="/sell"
-                  className="hidden md:flex items-center gap-1 xl:gap-2 bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-gray-900 px-3 xl:px-4 py-2 xl:py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 border border-yellow-400 text-sm"
+                  className="hidden md:flex items-center gap-1 xl:gap-2 bg-linear-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-gray-900 px-3 xl:px-4 py-2 xl:py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 border border-yellow-400 text-sm"
                 >
                   <TagIcon className="w-4 h-4 xl:w-5 xl:h-5" />
                   <span className="hidden xl:inline  text-gray-900  font-semibold transition-all duration-200 shadow-lg text-lg justify-center">Sell</span>
@@ -538,7 +538,7 @@ export default function Navbar() {
               {isSeller && (
                 <Link
                   href="/seller/dashboard"
-                  className="hidden md:flex items-center gap-1 xl:gap-2 bg-gradient-to-r from-yellow-500 to-yellow-500 hover:from-yellow-600 hover:to-yellow-600 text-white px-3 xl:px-4 py-2 xl:py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 border border-green-400 text-sm"
+                  className="hidden md:flex items-center gap-1 xl:gap-2 bg-linear-to-r from-yellow-500 to-yellow-500 hover:from-yellow-600 hover:to-yellow-600 text-white px-3 xl:px-4 py-2 xl:py-2.5 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 border border-green-400 text-sm"
                 >
                   <ChartBarIcon className="w-4 h-4 xl:w-5 xl:h-5" />
                   <span className="hidden xl:inline">Dashboard</span>
@@ -553,7 +553,7 @@ export default function Navbar() {
                     className="flex items-center gap-2 text-gray-300 hover:text-yellow-400 transition-colors duration-200 group"
                   >
                     <div className="flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-2 xl:px-3 py-1.5 xl:py-2 rounded-xl transition-all duration-200 border border-gray-600">
-                      <div className="w-7 h-7 xl:w-8 xl:h-8 bg-gradient-to-r from-yellow-500 to-amber-500 rounded-full flex items-center justify-center text-gray-900 font-semibold text-xs xl:text-sm">
+                      <div className="w-7 h-7 xl:w-8 xl:h-8 bg-linear-to-r from-yellow-500 to-amber-500 rounded-full flex items-center justify-center text-gray-900 font-semibold text-xs xl:text-sm">
                         {user?.name?.charAt(0)?.toUpperCase() || 'U'}
                       </div>
                       <span className="font-semibold max-w-16 xl:max-w-24 truncate text-sm hidden sm:inline">

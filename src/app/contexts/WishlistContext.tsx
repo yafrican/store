@@ -207,24 +207,23 @@ export function WishlistProvider({ children }: { children: ReactNode }) {
     setWishlistItems([])
   }
 
-  const moveToCart = (product: Product) => {
-    // Convert wishlist product format to cart product format
-    const cartProduct = {
-      ...product,
-      // Ensure we're using the correct ID field that CartContext expects
-      id: product._id, // Map _id to id for CartContext
-      price: product.isOnSale && product.salePrice ? product.salePrice : product.price
-    }
-    
-    // Add to cart using CartContext
-    addToCart(cartProduct)
-    
-    // Remove from wishlist
-    removeFromWishlist(product._id)
-    
-    // Show success message
-    alert(`Added ${product.name} to cart!`)
+ const moveToCart = (product: Product) => {
+  // Convert wishlist product format to cart product format
+  const cartProduct = {
+    ...product,
+    // Ensure we're using the correct ID field that CartContext expects
+    id: product._id, // Map _id to id for CartContext
+    price: product.isOnSale && product.salePrice ? product.salePrice : product.price
   }
+  
+  // Add to cart using CartContext
+  addToCart(cartProduct)
+  
+  // Remove from wishlist
+  removeFromWishlist(product._id)
+  
+  // No alert here - the toast will be handled in the component
+}
 
   const value = {
     wishlistItems,

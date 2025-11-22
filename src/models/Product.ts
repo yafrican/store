@@ -62,16 +62,22 @@ const ProductSchema = new Schema<IProduct>(
       required: [true, 'Category is required'],
       trim: true,
        enum: [
-    'ELECTRONICS', 
-    'CLOTHING', 
-    'HOME_GARDEN', 
-    'BEAUTY_HEALTH', 
-    'SPORTS_OUTDOORS', 
-    'TOYS_GAMES', 
-    'AUTOMOTIVE', 
-    'BOOKS_MEDIA', 
-    'JEWELRY_ACCESSORIES', 
-    'FOOD_BEVERAGES'
+    'ELECTRONICS',
+    'CLOTHING',
+    'HOME_FURNITURE_APPLIANCES',
+    'BEAUTY_PERSONAL_CARE',
+    'LEISURE_ACTIVITIES',
+    'BABIES_KIDS',
+    'AUTOMOTIVE',
+    'BOOKS_MEDIA',
+    'FASHION',
+    'FOOD_AGRICULTURE_FARMING',
+    'SERVICES',
+    'PROPERTY',
+    'VEHICLES',
+    'COMMERCIAL_EQUIPMENT',
+    'REPAIR_CONSTRUCTION',
+    'ANIMALS_PETS'
   ]
 
   },

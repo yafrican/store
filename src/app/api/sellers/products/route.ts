@@ -169,6 +169,7 @@ export async function GET(req: Request) {
 }
 
 // POST create new product
+// POST create new product - ADD VALIDATION
 export async function POST(req: Request) {
   try {
     console.log('🔄 Starting POST /api/sellers/products...')
@@ -177,6 +178,16 @@ export async function POST(req: Request) {
     await connectMongo()
 
     const data = await req.json()
+    console.log('📦 Received product data:', data)
+
+    // ✅ ADD: Valid category enum values
+    // AFTER (CORRECT - matches your MongoDB schema):
+const validCategories = [
+  'ELECTRONICS', 'CLOTHING', 'HOME_FURNITURE_APPLIANCES', 'BEAUTY_PERSONAL_CARE',
+  'LEISURE_ACTIVITIES', 'BABIES_KIDS', 'AUTOMOTIVE', 'BOOKS_MEDIA',
+  'FASHION', 'FOOD_AGRICULTURE_FARMING', 'SERVICES', 'PROPERTY',
+  'VEHICLES', 'COMMERCIAL_EQUIPMENT', 'REPAIR_CONSTRUCTION', 'ANIMALS_PETS'
+]
 
     // Validation
     if (!data.name?.trim()) {
@@ -200,6 +211,18 @@ export async function POST(req: Request) {
       }, { status: 400 })
     }
 
+    // ✅ FIX: Validate category against allowed enum values
+    const category = data.category.trim().toUpperCase()
+    console.log('🔍 Validating category:', category)
+    console.log('🔍 Valid categories:', validCategories)
+
+    if (!validCategories.includes(category)) {
+      return NextResponse.json({
+        success: false,
+        error: `Invalid category: "${category}". Must be one of: ${validCategories.join(', ')}`
+      }, { status: 400 })
+    }
+
     const stock = data.stock ? parseInt(data.stock) : 1
     if (stock < 0) {
       return NextResponse.json({
@@ -216,7 +239,7 @@ export async function POST(req: Request) {
       name: data.name.trim(),
       price: parseFloat(data.price),
       originalPrice: data.originalPrice ? parseFloat(data.originalPrice) : parseFloat(data.price),
-      category: data.category.trim().toUpperCase(),
+      category: category, // ✅ Use the validated category
       subcategory: data.subcategory ? data.subcategory.trim() : "",
       images: Array.isArray(data.images) ? data.images : [],
       description: data.description ? data.description.trim() : "",
@@ -226,6 +249,8 @@ export async function POST(req: Request) {
       stock: stock,
       specifications: safeSpecifications
     }
+
+    console.log('📦 Creating product with validated data:', productData)
 
     const product = await Product.create(productData)
 
@@ -238,7 +263,7 @@ export async function POST(req: Request) {
       name: product.name,
       price: product.price,
       originalPrice: product.originalPrice,
-      category: product.category.toUpperCase(),
+      category: product.category,
       subcategory: product.subcategory,
       images: product.images,
       description: product.description,

@@ -835,7 +835,7 @@ function MobileHeader({
   }
 
   return (
-    <div className="lg:hidden bg-white border-b border-gray-200 p-4 sticky top-0 z-40">
+    <div className="lg:hidden bg-white border-b border-gray-200 p-4 stick top-0 ">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <button
@@ -844,11 +844,11 @@ function MobileHeader({
           >
             <Menu className="w-5 h-5 text-gray-600" />
           </button>
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-linear-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
             <ShoppingBag className="w-4 h-4 text-white" />
           </div>
           <div>
-            <h1 className="font-bold text-gray-900 text-sm">SellerPro</h1>
+            <h1 className="font-bold text-gray-900 text-sm">Seller</h1>
             <p className="text-gray-500 text-xs">Dashboard</p>
           </div>
         </div>
@@ -917,7 +917,7 @@ function SellerSidebar({
         animate={{ 
           x: mobileOpen ? 0 : (window.innerWidth < 1024 ? -300 : 0)
         }}
-        className={`bg-white border-r border-gray-200 h-screen fixed lg:sticky top-0 flex flex-col z-50 ${
+        className={`bg-white border-r border-gray-200 h-screen fixed lg:sticky top-0 flex flex-col  ${
           collapsed ? 'w-16' : 'w-64 lg:w-80'
         } transition-all duration-300 shadow-lg`}
       >
@@ -930,7 +930,7 @@ function SellerSidebar({
                 animate={{ opacity: 1 }}
                 className="flex items-center gap-3"
               >
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
+                <div className="w-10 h-10 bg-linear-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center">
                   <ShoppingBag className="w-6 h-6 text-white" />
                 </div>
                 <div>
@@ -1058,7 +1058,7 @@ function StatsCards({ stats }: { stats: DashboardStats }) {
           className="bg-white rounded-xl lg:rounded-2xl p-4 lg:p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow group"
         >
           <div className="flex items-center justify-between mb-3 lg:mb-4">
-            <div className={`p-2 lg:p-3 rounded-lg lg:rounded-xl bg-gradient-to-r ${getColorClasses(item.color)}`}>
+            <div className={`p-2 lg:p-3 rounded-lg lg:rounded-xl bg-linear-to-r ${getColorClasses(item.color)}`}>
               {item.icon}
             </div>
             <span className={`text-xs lg:text-sm font-medium ${
@@ -1525,7 +1525,7 @@ export default function ProfessionalSellerDashboard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center ">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
           <p className="text-gray-600">Loading Professional Dashboard...</p>
@@ -1643,7 +1643,7 @@ export default function ProfessionalSellerDashboard() {
                   {profileLoading ? (
                     <p className="text-gray-500">Loading profile...</p>
                   ) : (
-                    <div className="space-y-4">
+                    <div className="space-y-4 mb-16">
                       <div>
                         <label className="block text-sm font-medium mb-1">Store Name</label>
                         <input
