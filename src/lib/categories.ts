@@ -1621,6 +1621,103 @@ const subcategoryConfigs: { [key: string]: { [key: string]: any } } = {
       ]
     }
   },
+  // JEWELRY & ACCESSORIES SUBCATEGORIES - ENHANCED VERSION
+// Add to your subcategoryConfigs object:
+'Jewelry and Accessories': {
+  'Jewelry': {
+    specifications: [
+      { fieldName: 'jewelryType', label: 'Jewelry Type', type: 'select', required: true,
+        options: ['Necklaces', 'Earrings', 'Rings', 'Bracelets', 'Anklets', 'Brooches', 'Body Jewelry', 'Jewelry Sets'] },
+      { fieldName: 'jewelryMaterial', label: 'Material', type: 'select', required: true,
+        options: ['Gold', 'Silver', 'Platinum', 'Stainless Steel', 'Brass', 'Copper', 'Titanium', 'Other'] },
+      { fieldName: 'jewelryGemstone', label: 'Gemstone', type: 'select', required: false,
+        options: ['Diamond', 'Ruby', 'Emerald', 'Sapphire', 'Pearl', 'Amethyst', 'Topaz', 'Opal', 'None'] },
+      { fieldName: 'jewelryGender', label: 'For', type: 'select', required: false,
+        options: ['Women', 'Men', 'Unisex', 'Children'] },
+      { fieldName: 'jewelryCondition', label: 'Condition', type: 'select', required: true,
+        options: ['New', 'Used - Like New', 'Used - Good', 'Used - Fair', 'Vintage'] },
+    ],
+    filters: [
+      { fieldName: 'jewelryType', label: 'Jewelry Type', type: 'checkbox', required: false },
+      { fieldName: 'jewelryMaterial', label: 'Material', type: 'checkbox', required: false },
+      { fieldName: 'jewelryGemstone', label: 'Gemstone', type: 'checkbox', required: false },
+      { fieldName: 'jewelryGender', label: 'For', type: 'checkbox', required: false },
+    ]
+  },
+  'Watches': {
+    specifications: [
+      { fieldName: 'watchType', label: 'Watch Type', type: 'select', required: true,
+        options: ['Analog', 'Digital', 'Smartwatch', 'Chronograph', 'Dress', 'Sports', 'Luxury'] },
+      { fieldName: 'watchBrand', label: 'Brand', type: 'text', required: false },
+      { fieldName: 'watchMaterial', label: 'Material', type: 'select', required: false,
+        options: ['Stainless Steel', 'Leather', 'Rubber', 'Gold', 'Silver', 'Titanium', 'Ceramic'] },
+      { fieldName: 'watchGender', label: 'For', type: 'select', required: false,
+        options: ['Men', 'Women', 'Unisex'] },
+      { fieldName: 'watchCondition', label: 'Condition', type: 'select', required: true,
+        options: ['New', 'Used - Like New', 'Used - Good', 'Used - Fair', 'Vintage'] },
+    ],
+    filters: [
+      { fieldName: 'watchType', label: 'Watch Type', type: 'checkbox', required: false },
+      { fieldName: 'watchMaterial', label: 'Material', type: 'checkbox', required: false },
+      { fieldName: 'watchGender', label: 'For', type: 'checkbox', required: false },
+    ]
+  },
+  'Bags & Purses': {
+    specifications: [
+      { fieldName: 'bagType', label: 'Bag Type', type: 'select', required: true,
+        options: ['Handbag', 'Backpack', 'Clutch', 'Tote', 'Crossbody', 'Wallet', 'Briefcase', 'Travel Bag'] },
+      { fieldName: 'bagMaterial', label: 'Material', type: 'select', required: false,
+        options: ['Leather', 'Canvas', 'Nylon', 'Suede', 'Polyester', 'Straw', 'Other'] },
+      { fieldName: 'bagColor', label: 'Color', type: 'select', required: true,
+        options: ['Black', 'Brown', 'White', 'Blue', 'Red', 'Green', 'Multi', 'Other'] },
+      { fieldName: 'bagBrand', label: 'Brand', type: 'text', required: false },
+      { fieldName: 'bagCondition', label: 'Condition', type: 'select', required: true,
+        options: ['New', 'Used - Like New', 'Used - Good', 'Used - Fair'] },
+    ],
+    filters: [
+      { fieldName: 'bagType', label: 'Bag Type', type: 'checkbox', required: false },
+      { fieldName: 'bagMaterial', label: 'Material', type: 'checkbox', required: false },
+      { fieldName: 'bagColor', label: 'Color', type: 'checkbox', required: false },
+    ]
+  },
+  'Sunglasses & Eyewear': {
+    specifications: [
+      { fieldName: 'eyewearType', label: 'Eyewear Type', type: 'select', required: true,
+        options: ['Sunglasses', 'Prescription Glasses', 'Reading Glasses', 'Safety Glasses'] },
+      { fieldName: 'eyewearBrand', label: 'Brand', type: 'text', required: false },
+      { fieldName: 'eyewearFrameMaterial', label: 'Frame Material', type: 'select', required: false,
+        options: ['Plastic', 'Metal', 'Acetate', 'Titanium', 'Mixed'] },
+      { fieldName: 'eyewearLensColor', label: 'Lens Color', type: 'select', required: false,
+        options: ['Black', 'Brown', 'Gray', 'Blue', 'Green', 'Yellow', 'Clear', 'Mirrored'] },
+      { fieldName: 'eyewearCondition', label: 'Condition', type: 'select', required: true,
+        options: ['New', 'Used - Like New', 'Used - Good', 'Used - Fair'] },
+    ],
+    filters: [
+      { fieldName: 'eyewearType', label: 'Eyewear Type', type: 'checkbox', required: false },
+      { fieldName: 'eyewearFrameMaterial', label: 'Frame Material', type: 'checkbox', required: false },
+      { fieldName: 'eyewearLensColor', label: 'Lens Color', type: 'checkbox', required: false },
+    ]
+  },
+  'Belts & Wallets': {
+    specifications: [
+      { fieldName: 'beltWalletType', label: 'Product Type', type: 'select', required: true,
+        options: ['Belt', 'Wallet', 'Money Clip', 'Card Holder'] },
+      { fieldName: 'beltWalletMaterial', label: 'Material', type: 'select', required: false,
+        options: ['Leather', 'Fabric', 'Synthetic', 'Metal'] },
+      { fieldName: 'beltWalletColor', label: 'Color', type: 'select', required: true,
+        options: ['Black', 'Brown', 'Blue', 'Red', 'Multi', 'Other'] },
+      { fieldName: 'beltSize', label: 'Belt Size (if applicable)', type: 'select', required: false,
+        options: ['S', 'M', 'L', 'XL', 'Specific Size'] },
+      { fieldName: 'beltWalletCondition', label: 'Condition', type: 'select', required: true,
+        options: ['New', 'Used - Like New', 'Used - Good', 'Used - Fair'] },
+    ],
+    filters: [
+      { fieldName: 'beltWalletType', label: 'Product Type', type: 'checkbox', required: false },
+      { fieldName: 'beltWalletMaterial', label: 'Material', type: 'checkbox', required: false },
+      { fieldName: 'beltWalletColor', label: 'Color', type: 'checkbox', required: false },
+    ]
+  }
+},
 // CLOTHING SUBCATEGORIES
 'Clothing': {
   'Men': {
@@ -3249,6 +3346,28 @@ export const categoryConfigs: { [key: string]: CategoryConfig } = {
   ],
   filters: [
     { fieldName: 'autoCondition', label: 'Condition', type: 'checkbox', required: false },
+  ]
+},
+// Add to your categoryConfigs object:
+'Jewelry and Accessories': {
+  id: 'jewelry-accessories',
+  name: 'Jewelry and Accessories',
+  slug: 'jewelry-accessories',
+  subcategories: ['Jewelry', 'Watches', 'Bags & Purses', 'Sunglasses & Eyewear', 'Belts & Wallets'],
+  specifications: [
+    { fieldName: 'jewelryBrand', label: 'Brand', type: 'select', required: false,
+      options: ['Local Brand', 'International', 'Custom Made', 'Other'] },
+    { fieldName: 'jewelryMaterial', label: 'Material', type: 'select', required: true,
+      options: ['Gold', 'Silver', 'Platinum', 'Stainless Steel', 'Brass', 'Copper', 'Other'] },
+    { fieldName: 'jewelryCondition', label: 'Condition', type: 'select', required: true,
+      options: ['New', 'Used - Like New', 'Used - Good', 'Used - Fair', 'Vintage'] },
+    { fieldName: 'jewelryColor', label: 'Color', type: 'select', required: false,
+      options: ['Gold', 'Silver', 'Rose Gold', 'Black', 'White', 'Multi-color'] },
+  ],
+  filters: [
+    { fieldName: 'jewelryMaterial', label: 'Material', type: 'checkbox', required: false },
+    { fieldName: 'jewelryCondition', label: 'Condition', type: 'checkbox', required: false },
+    { fieldName: 'price', label: 'Price', type: 'range', required: false, min: 0, max: 1000000 },
   ]
 },
   'Services': {

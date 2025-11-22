@@ -12,6 +12,10 @@ const newCategories = [
     subcategories: ['Men', 'Women', 'Kids', 'Shoes']
   },
   { 
+    name: 'Jewelry and Accessories', 
+  subcategories: ['Jewelry', 'Watches', 'Bags & Purses', 'Sunglasses & Eyewear', 'Belts & Wallets'],
+  },
+  { 
     name: 'Home, Furniture & Appliances', 
     subcategories: ['Furniture', 'Kitchen Appliances', 'Home Decor', 'Garden & Outdoor']
   },

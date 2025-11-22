@@ -74,6 +74,10 @@ const newCategories = [
     subcategories: ['Men', 'Women', 'Kids', 'Baby', 'Shoes', 'Accessories']
   },
   { 
+    name: 'Jewelry and Accessories', 
+  subcategories: ['Jewelry', 'Watches', 'Bags & Purses', 'Sunglasses & Eyewear', 'Belts & Wallets'],
+  },
+  { 
     name: 'Books & Media', 
     subcategories: ['Fiction', 'Non-Fiction', 'Children', 'Educational', 'Audio Books']
   },

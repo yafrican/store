@@ -70,7 +70,7 @@ const ProductSchema = new Schema<IProduct>(
     'BABIES_KIDS',
     'AUTOMOTIVE',
     'BOOKS_MEDIA',
-    'FASHION',
+    'JEWELRY_ACCESSORIES',
     'FOOD_AGRICULTURE_FARMING',
     'SERVICES',
     'PROPERTY',

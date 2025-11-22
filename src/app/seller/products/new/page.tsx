@@ -2541,7 +2541,7 @@ const mapCategoryToDBFormat = (category: string): string => {
     'Toys & Games': 'LEISURE_ACTIVITIES',
     'Automotive': 'AUTOMOTIVE', 
     'Books & Media': 'BOOKS_MEDIA',
-    'Jewelry & Accessories': 'FASHION',
+    'Jewelry and Accessories': 'JEWELRY_ACCESSORIES',  // ✅ Maps to FASHION in DB
     'Food & Beverages': 'FOOD_AGRICULTURE_FARMING',
     'Services': 'SERVICES',
     'Property': 'PROPERTY',
@@ -2565,7 +2565,8 @@ const mapToConfigCategory = (category: string): string => {
     'Toys & Games': 'Leisure & Activities',
     'Automotive': 'Automotive',
     'Books & Media': 'Books & Media',
-    'Jewelry & Accessories': 'Fashion',
+
+    'Jewelry and Accessories': 'Jewelry and Accessories',  // ✅ This should match your lib/categories
     'Food & Beverages': 'Food, Agriculture & Farming',
     'Services': 'Services',
     'Property': 'Property',
@@ -2600,26 +2601,27 @@ export default function CreateProductPage() {
     specifications: {}
   })
 
+  // Updated categories list matching your new structure
   const categories = [
     'Electronics',
-    'Clothing',
-    'Home, Furniture & Appliances',
-    'Beauty & Personal Care',
-    'Sports & Outdoors',
-    'Toys & Games',
-    'Automotive',
-    'Books & Media',
-    'Jewelry & Accessories',
-    'Food & Beverages',
-    'Services',
-    'Property',
     'Vehicles',
-    'Commercial Equipment',
+    'Property',
+    'Home, Furniture & Appliances',
+    'Clothing',
+      'Jewelry and Accessories',     // ✅ New category
+    'Books & Media',
+    'Automotive',
+    'Beauty & Personal Care',
+    'Services',
     'Repair & Construction',
-    'Animals & Pets',
-    'Babies & Kids'
+    'Commercial Equipment',
+    'Leisure & Activities',
+    'Babies & Kids',
+    'Food, Agriculture & Farming',
+    'Animals & Pets'
   ]
 
+  // Updated subcategories matching your comprehensive structure
   const subcategories: Record<string, string[]> = {
     'Electronics': [
       'Phones', 'Laptops & Computers', 'Video Game Consoles', 'Audio & Music Equipment', 
@@ -2627,22 +2629,35 @@ export default function CreateProductPage() {
       'Printers & Scanners', 'Computer Monitors', 'Computer Hardware', 'Computer Accessories',
       'Electronic Accessories & Supplies', 'Video Games', 'Software'
     ],
-    'Clothing': ['Men', 'Women', 'Kids', 'Baby', 'Shoes', 'Accessories'],
+    'Vehicles': [
+      'Vehicle Parts & Accessories', 'Cars', 'Motorcycles & Scooters', 'Buses & Microbuses',
+      'Trucks & Trailers', 'Construction & Heavy Machinery', 'Watercraft & Boats', 'Car Services'
+    ],
+    'Property': [
+      'New Builds', 'Houses & Apartments for Rent', 'Houses & Apartments for Sale', 
+      'Land & Plots for Rent', 'Short Let', 'Land & Plots for Sale',
+      'Event Centres, Venues & Workstations', 'Commercial Property for Rent', 
+      'Commercial Property for Sale'
+    ],
     'Home, Furniture & Appliances': [
       'Furniture', 'Lighting', 'Storage & Organization', 'Home Accessories',
       'Kitchen Appliances', 'Kitchenware & Cookware', 'Household Chemicals', 'Garden Supplies'
     ],
+    'Clothing': ['Men', 'Women', 'Kids', 'Baby', 'Shoes', 'Accessories'],
+    'Books & Media': ['Fiction', 'Non-Fiction', 'Children', 'Educational', 'Audio Books'],
+    'Automotive': ['Car Care', 'Tools', 'Accessories', 'Parts', 'Motorcycle'],
     'Beauty & Personal Care': [
       'Hair Care & Beauty', 'Face Care', 'Oral Care', 'Body Care', 'Fragrances',
       'Makeup', 'Tools & Accessories', 'Vitamins & Supplements', 'Massagers',
       'Health & Beauty Services'
     ],
-    'Sports & Outdoors': ['Exercise', 'Outdoor Gear', 'Team Sports', 'Water Sports', 'Cycling'],
-    'Toys & Games': ['Action Figures', 'Dolls', 'Board Games', 'Educational', 'Puzzles'],
-    'Automotive': ['Car Care', 'Tools', 'Accessories', 'Parts', 'Motorcycle'],
-    'Books & Media': ['Fiction', 'Non-Fiction', 'Children', 'Educational', 'Audio Books'],
-    'Jewelry & Accessories': ['Necklaces', 'Rings', 'Earrings', 'Watches', 'Bags'],
-    'Food & Beverages': ['Snacks', 'Beverages', 'Cooking', 'Organic', 'International'],
+    'Jewelry and Accessories': [
+    'Jewelry',
+    'Watches', 
+    'Bags & Purses',
+    'Sunglasses & Eyewear',
+    'Belts & Wallets'
+  ],
     'Services': [
       'Building & Trade Services', 'Car Services', 'Computer & IT Services', 'Repair Services',
       'Cleaning Services', 'Printing Services', 'Manufacturing Services', 'Logistics Services',
@@ -2652,34 +2667,32 @@ export default function CreateProductPage() {
       'DJ & Entertainment Services', 'Photography & Video Services', 'Landscaping & Gardening Services',
       'Pet Services'
     ],
-    'Property': [
-      'New Builds', 'Houses & Apartments for Rent', 'Houses & Apartments for Sale', 
-      'Land & Plots for Rent', 'Short Let', 'Land & Plots for Sale',
-      'Event Centres, Venues & Workstations', 'Commercial Property for Rent', 
-      'Commercial Property for Sale'
-    ],
-    'Vehicles': [
-      'Vehicle Parts & Accessories', 'Cars', 'Motorcycles & Scooters', 'Buses & Microbuses',
-      'Trucks & Trailers', 'Construction & Heavy Machinery', 'Watercraft & Boats', 'Car Services'
+    'Repair & Construction': [
+      'Electrical Equipment', 'Building Materials & Supplies', 'Plumbing & Water Systems',
+      'Electrical Hand Tools', 'Hand Tools', 'Measuring & Testing Tools', 'Hardware & Fasteners',
+      'Doors & Security', 'Windows & Glass', 'Building & Trade Services', 'Repair Services'
     ],
     'Commercial Equipment': [
       'Medical Equipment & Supplies', 'Manufacturing Equipment', 'Retail & Store Equipment',
       'Restaurant & Catering Equipment', 'Stationery & Office Equipment', 'Salon & Beauty Equipment',
       'Printing & Graphics Equipment', 'Stage & Event Equipment', 'Manufacturing Services'
     ],
-    'Repair & Construction': [
-      'Electrical Equipment', 'Building Materials & Supplies', 'Plumbing & Water Systems',
-      'Electrical Hand Tools', 'Hand Tools', 'Measuring & Testing Tools', 'Hardware & Fasteners',
-      'Doors & Security', 'Windows & Glass', 'Building & Trade Services', 'Repair Services'
-    ],
-    'Animals & Pets': [
-      'Pet Accessories', 'Cats & Kittens', 'Dogs & Puppies', 'Fish', 'Birds',
-      'Pet Services', 'Other Animals'
+    'Leisure & Activities': [
+      'Sports Equipment', 'Massagers', 'Musical Instruments & Gear', 'Books & Table Games',
+      'Arts, Crafts & Awards', 'Outdoor Gear', 'Music & Video', 'Fitness & Personal Training'
     ],
     'Babies & Kids': [
       'Toys, Games & Bikes', 'Children\'s Furniture', 'Children\'s Clothing', 'Children\'s Shoes',
       'Babies & Kids Accessories', 'Baby Gear & Equipment', 'Care & Feeding', 'Maternity & Pregnancy',
       'Transport & Safety', 'Playground Equipment', 'Child Care & Education'
+    ],
+    'Food, Agriculture & Farming': [
+      'Food & Beverages', 'Farm Animals', 'Feeds, Supplements & Seeds', 'Farm Machinery & Equipment',
+      'Farm Animal Feed & Supplies'
+    ],
+    'Animals & Pets': [
+      'Pet Accessories', 'Cats & Kittens', 'Dogs & Puppies', 'Fish', 'Birds',
+      'Pet Services', 'Other Animals'
     ]
   }
 
@@ -2714,7 +2727,7 @@ export default function CreateProductPage() {
     }
   }, [formData.category])
 
-  // Form validation for current step - FIXED: Only validate relevant fields for each step
+  // Form validation for current step
   const validateCurrentStep = (): string | null => {
     switch (currentStep) {
       case 'basic':
@@ -2727,7 +2740,6 @@ export default function CreateProductPage() {
         return null
 
       case 'specifications':
-        // Only validate specifications, NOT images
         if (categoryConfig) {
           const missingRequired = categoryConfig.specifications
             .filter(spec => spec.required && !formData.specifications[spec.fieldName])
@@ -2740,7 +2752,6 @@ export default function CreateProductPage() {
         return null
 
       case 'images':
-        // Only validate images on the images step
         if (imageFiles.length === 0) return 'Please upload at least one product image'
         return null
 
@@ -2749,7 +2760,7 @@ export default function CreateProductPage() {
     }
   }
 
-  // Navigation functions - FIXED: Use toast instead of alert
+  // Navigation functions
   const nextStep = () => {
     const error = validateCurrentStep()
     if (error) {
@@ -2849,77 +2860,74 @@ export default function CreateProductPage() {
   }
 
   // Upload images with watermark using API route
- // In your CreateProductPage component - update the upload function
-const uploadImagesWithWatermark = async (files: File[]): Promise<string[]> => {
-  try {
-    console.log('📤 Starting upload with watermark via API...');
-    
-    const uploadFormData = new FormData();
-    files.forEach(file => {
-      uploadFormData.append('images', file);
-    });
-
-    // ✅ CRITICAL: Add watermark flag
-    uploadFormData.append('addWatermark', 'true');
-
-    console.log('🔄 Sending to upload API with watermark flag...');
-
-    const response = await fetch('/api/upload', {
-      method: 'POST',
-      body: uploadFormData,
-    });
-
-    console.log('📤 Upload API response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Upload API error:', errorText);
-      throw new Error(`Upload failed: HTTP ${response.status}`);
-    }
-
-    const result = await response.json();
-    console.log('📤 Upload API result:', result);
-
-    if (result.success && result.urls) {
-      console.log('✅ API upload with watermark successful:', result.urls);
-      console.log('📝 Message:', result.message);
-      return result.urls;
-    } else {
-      throw new Error(result.error || 'Upload failed - no URLs returned');
-    }
-  } catch (error) {
-    console.error('❌ API upload with watermark error:', error);
-    
-    // Fallback: Try without watermark
-    console.log('🔄 Falling back to upload without watermark...');
+  const uploadImagesWithWatermark = async (files: File[]): Promise<string[]> => {
     try {
+      console.log('📤 Starting upload with watermark via API...');
+      
       const uploadFormData = new FormData();
       files.forEach(file => {
         uploadFormData.append('images', file);
       });
-      // Don't add watermark flag for fallback
-      
-      const fallbackResponse = await fetch('/api/upload', {
+
+      uploadFormData.append('addWatermark', 'true');
+
+      console.log('🔄 Sending to upload API with watermark flag...');
+
+      const response = await fetch('/api/upload', {
         method: 'POST',
         body: uploadFormData,
       });
 
-      if (fallbackResponse.ok) {
-        const fallbackResult = await fallbackResponse.json();
-        if (fallbackResult.success && fallbackResult.urls) {
-          console.log('✅ Fallback upload successful (no watermark):', fallbackResult.urls);
-          return fallbackResult.urls;
-        }
+      console.log('📤 Upload API response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Upload API error:', errorText);
+        throw new Error(`Upload failed: HTTP ${response.status}`);
       }
-    } catch (fallbackError) {
-      console.error('❌ Fallback upload also failed:', fallbackError);
+
+      const result = await response.json();
+      console.log('📤 Upload API result:', result);
+
+      if (result.success && result.urls) {
+        console.log('✅ API upload with watermark successful:', result.urls);
+        console.log('📝 Message:', result.message);
+        return result.urls;
+      } else {
+        throw new Error(result.error || 'Upload failed - no URLs returned');
+      }
+    } catch (error) {
+      console.error('❌ API upload with watermark error:', error);
+      
+      // Fallback: Try without watermark
+      console.log('🔄 Falling back to upload without watermark...');
+      try {
+        const uploadFormData = new FormData();
+        files.forEach(file => {
+          uploadFormData.append('images', file);
+        });
+        
+        const fallbackResponse = await fetch('/api/upload', {
+          method: 'POST',
+          body: uploadFormData,
+        });
+
+        if (fallbackResponse.ok) {
+          const fallbackResult = await fallbackResponse.json();
+          if (fallbackResult.success && fallbackResult.urls) {
+            console.log('✅ Fallback upload successful (no watermark):', fallbackResult.urls);
+            return fallbackResult.urls;
+          }
+        }
+      } catch (fallbackError) {
+        console.error('❌ Fallback upload also failed:', fallbackError);
+      }
+      
+      // Final fallback to direct Cloudinary
+      console.log('🔄 Final fallback to direct Cloudinary...');
+      return await uploadImagesToCloudinary(files);
     }
-    
-    // Final fallback to direct Cloudinary
-    console.log('🔄 Final fallback to direct Cloudinary...');
-    return await uploadImagesToCloudinary(files);
-  }
-};
+  };
 
   // Fallback: Upload images to Cloudinary without watermark
   const uploadImagesToCloudinary = async (files: File[]): Promise<string[]> => {
@@ -2980,7 +2988,7 @@ const uploadImagesWithWatermark = async (files: File[]): Promise<string[]> => {
     }
   }
 
-  // Handle final form submission - FIXED: Use toast instead of alert
+  // Handle final form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -3452,93 +3460,92 @@ const uploadImagesWithWatermark = async (files: File[]): Promise<string[]> => {
         </div>
 
         {/* Progress Steps */}
-        {/* Progress Steps - Mobile Responsive */}
-<div className="mb-8">
-  <nav aria-label="Progress">
-    {/* Desktop View */}
-    <ol className="hidden md:flex items-center space-x-8">
-      {steps.map((step, index) => {
-        const stepIndex = steps.findIndex(s => s.id === step.id)
-        const currentStepIndex = steps.findIndex(s => s.id === currentStep)
-        const isCompleted = stepIndex < currentStepIndex
-        const isCurrent = step.id === currentStep
+        <div className="mb-8">
+          <nav aria-label="Progress">
+            {/* Desktop View */}
+            <ol className="hidden md:flex items-center space-x-8">
+              {steps.map((step, index) => {
+                const stepIndex = steps.findIndex(s => s.id === step.id)
+                const currentStepIndex = steps.findIndex(s => s.id === currentStep)
+                const isCompleted = stepIndex < currentStepIndex
+                const isCurrent = step.id === currentStep
 
-        return (
-          <li key={step.id} className="flex-1">
-            <div className="flex items-center">
-              <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
-                isCompleted 
-                  ? 'bg-blue-600' 
-                  : isCurrent 
-                    ? 'bg-blue-600 border-2 border-blue-600' 
-                    : 'bg-gray-200'
-              }`}>
-                {isCompleted ? (
-                  <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  <span className={`text-sm font-medium ${
-                    isCurrent ? 'text-white' : 'text-gray-500'
-                  }`}>
-                    {index + 1}
-                  </span>
-                )}
-              </div>
-              <div className="ml-4 flex-1">
-                <div className={`text-sm font-medium ${
-                  isCompleted || isCurrent ? 'text-blue-600' : 'text-gray-500'
-                }`}>
-                  {step.name}
+                return (
+                  <li key={step.id} className="flex-1">
+                    <div className="flex items-center">
+                      <div className={`shrink-0 w-8 h-8 rounded-full flex items-center justify-center ${
+                        isCompleted 
+                          ? 'bg-blue-600' 
+                          : isCurrent 
+                            ? 'bg-blue-600 border-2 border-blue-600' 
+                            : 'bg-gray-200'
+                      }`}>
+                        {isCompleted ? (
+                          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                          </svg>
+                        ) : (
+                          <span className={`text-sm font-medium ${
+                            isCurrent ? 'text-white' : 'text-gray-500'
+                          }`}>
+                            {index + 1}
+                          </span>
+                        )}
+                      </div>
+                      <div className="ml-4 flex-1">
+                        <div className={`text-sm font-medium ${
+                          isCompleted || isCurrent ? 'text-blue-600' : 'text-gray-500'
+                        }`}>
+                          {step.name}
+                        </div>
+                        <div className="text-sm text-gray-500">{step.description}</div>
+                      </div>
+                      {index < steps.length - 1 && (
+                        <div className={`flex-1 h-0.5 ml-8 ${
+                          stepIndex < currentStepIndex ? 'bg-blue-600' : 'bg-gray-200'
+                        }`} />
+                      )}
+                    </div>
+                  </li>
+                )
+              })}
+            </ol>
+
+            {/* Mobile View */}
+            <div className="md:hidden">
+              <div className="flex justify-between items-center mb-4">
+                <div className="text-sm font-medium text-gray-900">
+                  Step {steps.findIndex(s => s.id === currentStep) + 1} of {steps.length}
                 </div>
-                <div className="text-sm text-gray-500">{step.description}</div>
+                <div className="text-sm text-gray-500">
+                  {steps.find(s => s.id === currentStep)?.name}
+                </div>
               </div>
-              {index < steps.length - 1 && (
-                <div className={`flex-1 h-0.5 ml-8 ${
-                  stepIndex < currentStepIndex ? 'bg-blue-600' : 'bg-gray-200'
-                }`} />
-              )}
+              
+              <div className="flex space-x-2">
+                {steps.map((step, index) => {
+                  const stepIndex = steps.findIndex(s => s.id === step.id)
+                  const currentStepIndex = steps.findIndex(s => s.id === currentStep)
+                  const isCompleted = stepIndex < currentStepIndex
+                  const isCurrent = step.id === currentStep
+
+                  return (
+                    <div
+                      key={step.id}
+                      className={`flex-1 h-2 rounded-full ${
+                        isCompleted 
+                          ? 'bg-blue-600' 
+                          : isCurrent 
+                            ? 'bg-blue-600' 
+                            : 'bg-gray-200'
+                      }`}
+                    />
+                  )
+                })}
+              </div>
             </div>
-          </li>
-        )
-      })}
-    </ol>
-
-    {/* Mobile View */}
-    <div className="md:hidden">
-      <div className="flex justify-between items-center mb-4">
-        <div className="text-sm font-medium text-gray-900">
-          Step {steps.findIndex(s => s.id === currentStep) + 1} of {steps.length}
+          </nav>
         </div>
-        <div className="text-sm text-gray-500">
-          {steps.find(s => s.id === currentStep)?.name}
-        </div>
-      </div>
-      
-      <div className="flex space-x-2">
-        {steps.map((step, index) => {
-          const stepIndex = steps.findIndex(s => s.id === step.id)
-          const currentStepIndex = steps.findIndex(s => s.id === currentStep)
-          const isCompleted = stepIndex < currentStepIndex
-          const isCurrent = step.id === currentStep
-
-          return (
-            <div
-              key={step.id}
-              className={`flex-1 h-2 rounded-full ${
-                isCompleted 
-                  ? 'bg-blue-600' 
-                  : isCurrent 
-                    ? 'bg-blue-600' 
-                    : 'bg-gray-200'
-              }`}
-            />
-          )
-        })}
-      </div>
-    </div>
-  </nav>
-</div>
 
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -3558,57 +3565,57 @@ const uploadImagesWithWatermark = async (files: File[]): Promise<string[]> => {
               </motion.div>
             </AnimatePresence>
 
-           {/* Navigation Buttons - Mobile Responsive */}
-<div className="flex flex-col sm:flex-row items-center justify-between pt-8 border-t border-gray-200 mt-8 mb-16 gap-4">
-  <button
-    type="button"
-    onClick={prevStep}
-    disabled={currentStep === 'basic'}
-    className="w-full sm:w-auto flex items-center justify-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors order-2 sm:order-1"
-  >
-    <LeftIcon className="w-4 h-4 mr-2" />
-    Previous
-  </button>
+            {/* Navigation Buttons */}
+            <div className="flex flex-col sm:flex-row items-center justify-between pt-8 border-t border-gray-200 mt-8 mb-16 gap-4">
+              <button
+                type="button"
+                onClick={prevStep}
+                disabled={currentStep === 'basic'}
+                className="w-full sm:w-auto flex items-center justify-center px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors order-2 sm:order-1"
+              >
+                <LeftIcon className="w-4 h-4 mr-2" />
+                Previous
+              </button>
 
-  <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto order-1 sm:order-2">
-    <button
-      type="button"
-      onClick={() => router.back()}
-      className="w-full sm:w-auto px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-center"
-    >
-      Cancel
-    </button>
+              <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto order-1 sm:order-2">
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="w-full sm:w-auto px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-center"
+                >
+                  Cancel
+                </button>
 
-    {currentStep === 'images' ? (
-      <button
-        type="submit"
-        disabled={loading}
-        className="w-full sm:w-auto px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-      >
-        {loading ? (
-          <>
-            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            Creating...
-          </>
-        ) : (
-          <>
-            <Plus className="w-4 h-4" />
-            Create Product
-          </>
-        )}
-      </button>
-    ) : (
-      <button
-        type="button"
-        onClick={nextStep}
-        className="w-full sm:w-auto flex items-center justify-center px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-      >
-        Next
-        <ArrowRight className="w-4 h-4 ml-2" />
-      </button>
-    )}
-  </div>
-</div>
+                {currentStep === 'images' ? (
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="w-full sm:w-auto px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                  >
+                    {loading ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        Creating...
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4" />
+                        Create Product
+                      </>
+                    )}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={nextStep}
+                    className="w-full sm:w-auto flex items-center justify-center px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Next
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </button>
+                )}
+              </div>
+            </div>
           </form>
         </motion.div>
       </div>
