@@ -361,41 +361,15 @@
 // // }
 // api/upload/route.ts - FIXED WITH NODE RUNTIME
 // app/api/upload/route.ts
+// app/api/upload/route.ts
 export const runtime = "nodejs"; // MUST BE AT VERY TOP
 
 import { NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
-import { Readable } from "stream";
-import {
-  addCenteredVisibleWatermark,
-  addProductionWatermark,
-} from "@/lib/watermark";
-
-// FIXED: Proper type conversion
-function arrayBufferToBuffer(ab: ArrayBuffer): Buffer {
-  const buf = Buffer.alloc(ab.byteLength);
-  const view = new Uint8Array(ab);
-  for (let i = 0; i < buf.length; i++) {
-    buf[i] = view[i];
-  }
-  return buf;
-}
-
-// Alternative simpler fix:
-// function arrayBufferToBuffer(ab: ArrayBuffer): Buffer {
-//   return Buffer.from(ab as ArrayBuffer);
-// }
-
-function bufferToStream(buffer: Buffer) {
-  const readable = new Readable();
-  readable.push(buffer);
-  readable.push(null);
-  return readable;
-}
 
 export async function POST(req: Request) {
   try {
-    console.log("🚀 Upload route running on Node runtime");
+    console.log("🚀 Upload route running on Node runtime - CLOUDINARY WATERMARK");
 
     const form = await req.formData();
     const files = form.getAll("images") as File[];
@@ -409,42 +383,63 @@ export async function POST(req: Request) {
 
     for (const file of files.slice(0, 4)) {
       try {
-        // FIXED: Explicit type handling
         const arrayBuffer = await file.arrayBuffer();
-        const buf = arrayBufferToBuffer(arrayBuffer);
+        const buffer = Buffer.from(arrayBuffer);
+        const base64Image = buffer.toString('base64');
+        const dataUri = `data:${file.type};base64,${base64Image}`;
 
-        let output: Buffer = buf;
+        // Cloudinary upload options
+        const uploadOptions: any = {
+          folder: "nextjs_products",
+          resource_type: "image",
+          overwrite: false,
+          unique_filename: true,
+          use_filename: false,
+        };
 
+        // ADD CLOUDINARY WATERMARK TRANSFORMATIONS - CENTERED
         if (applyWM) {
-          try {
-            output = await addCenteredVisibleWatermark(buf);
-            console.log("✅ Centered watermark applied");
-          } catch (err) {
-            console.log("⚠️ Centered failed, trying fallback...");
-            output = await addProductionWatermark(buf);
-            console.log("✅ Fallback watermark applied");
-          }
+          console.log(`🎨 Applying CENTERED CLOUDINARY watermark to: ${file.name}`);
+          uploadOptions.transformation = [
+            // MAIN CENTERED WATERMARK (Large, diagonal, centered)
+            {
+              overlay: {
+                font_family: 'Arial',
+                font_size: 80,
+                font_weight: 'bold',
+                text: 'yafrican.com'
+              },
+              color: '#FFFFFF',
+              opacity: 40, // Slightly less opaque for better visibility
+              angle: -45,  // Diagonal
+              gravity: 'center', // CENTERED POSITION
+              x: 0,
+              y: 0
+            },
+            // CORNER WATERMARK (Small, bottom right)
+            {
+              overlay: {
+                font_family: 'Arial',
+                font_size: 24,
+                font_weight: 'bold',
+                text: 'yafrican.com'
+              },
+              color: '#FFFFFF',
+              background: '#000000CC', // Darker background for better contrast
+              gravity: 'south_east',
+              x: 15,
+              y: 15
+            }
+          ];
         }
 
-        const upload = await new Promise<any>((resolve, reject) => {
-          cloudinary.uploader.upload_stream(
-            {
-              folder: "nextjs_products",
-              resource_type: "image",
-              overwrite: false,
-              unique_filename: true,
-              use_filename: false,
-            },
-            (err, res) => {
-              if (err) reject(err);
-              else resolve(res);
-            }
-          ).end(output);
-        });
-
-        if (upload.secure_url) {
-          results.push(upload.secure_url);
-          console.log(`✅ Uploaded: ${upload.secure_url}`);
+        // Upload to Cloudinary
+        const result = await cloudinary.uploader.upload(dataUri, uploadOptions);
+        
+        if (result.secure_url) {
+          results.push(result.secure_url);
+          console.log(`✅ Uploaded: ${result.secure_url}`);
+          console.log(`💧 Watermark: ${applyWM ? 'APPLIED' : 'NOT APPLIED'}`);
         }
 
       } catch (err) {
@@ -475,4 +470,8 @@ export async function POST(req: Request) {
   }
 }
 
-export const config = { api: { bodyParser: false } };
+export const config = { 
+  api: { 
+    bodyParser: false 
+  } 
+};
