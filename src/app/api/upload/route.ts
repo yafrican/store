@@ -359,8 +359,6 @@
 // //     bodyParser: false,
 // //   },
 // // }
-// api/upload/route.ts - FIXED WITH NODE RUNTIME
-// app/api/upload/route.ts
 // app/api/upload/route.ts
 export const runtime = "nodejs"; // MUST BE AT VERY TOP
 
@@ -397,38 +395,22 @@ export async function POST(req: Request) {
           use_filename: false,
         };
 
-        // ADD CLOUDINARY WATERMARK TRANSFORMATIONS - CENTERED
+        // ADD CLOUDINARY WATERMARK TRANSFORMATIONS - BOLD & VISIBLE
         if (applyWM) {
-          console.log(`🎨 Applying CENTERED CLOUDINARY watermark to: ${file.name}`);
+          console.log(`🎨 Applying BOLD VISIBLE watermark to: ${file.name}`);
           uploadOptions.transformation = [
-            // MAIN CENTERED WATERMARK (Large, diagonal, centered)
+            // LARGE BOLD CENTERED WATERMARK
             {
               overlay: {
                 font_family: 'Arial',
-                font_size: 80,
+                font_size: 120, // Large font for maximum visibility
                 font_weight: 'bold',
                 text: 'yafrican.com'
               },
               color: '#FFFFFF',
-              opacity: 40, // Slightly less opaque for better visibility
-              angle: -45,  // Diagonal
-              gravity: 'center', // CENTERED POSITION
-              x: 0,
-              y: 0
-            },
-            // CORNER WATERMARK (Small, bottom right)
-            {
-              overlay: {
-                font_family: 'Arial',
-                font_size: 24,
-                font_weight: 'bold',
-                text: 'yafrican.com'
-              },
-              color: '#FFFFFF',
-              background: '#000000CC', // Darker background for better contrast
-              gravity: 'south_east',
-              x: 15,
-              y: 15
+              opacity: 80, // High opacity for clear visibility
+              angle: -45,
+              gravity: 'center',
             }
           ];
         }
