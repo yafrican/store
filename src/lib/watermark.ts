@@ -358,7 +358,7 @@
 //   }
 // }
 
-// lib/watermark.ts - PERMANENT FIX
+// lib/watermark.ts - SIMPLIFIED & WORKING
 import sharp from 'sharp';
 
 export async function addCenteredVisibleWatermark(inputBuffer: Buffer): Promise<Buffer> {
@@ -376,65 +376,21 @@ export async function addCenteredVisibleWatermark(inputBuffer: Buffer): Promise<
     
     // Calculate font size
     const fontSize = Math.max(60, Math.floor(Math.min(width, height) * 0.08));
-    const cornerFontSize = Math.max(24, Math.floor(Math.min(width, height) * 0.03));
     
     console.log(`🔧 Using font size: ${fontSize}px for ${width}x${height} image`);
 
-    // SIMPLE CENTERED WATERMARK - NO XML COMMENTS, NO COMPLEX TRANSFORMS
-    const watermarkSvg = `
-      <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
-        <text 
-          x="50%" 
-          y="50%" 
-          text-anchor="middle" 
-          dominant-baseline="middle"
-          font-family="Arial, Helvetica, sans-serif"
-          font-size="${fontSize}"
-          font-weight="bold"
-          fill="rgba(255,255,255,0.8)"
-          stroke="rgba(0,0,0,0.8)"
-          stroke-width="2"
-        >
-          yafrican.com
-        </text>
-      </svg>
-    `;
+    // SIMPLE CENTERED WATERMARK - NO COMPLEX SVG
+    const watermarkSvg = `<svg width="${width}" height="${height}">
+<text x="50%" y="50%" text-anchor="middle" font-family="Arial" font-size="${fontSize}" font-weight="bold" fill="rgba(255,255,255,0.8)" stroke="rgba(0,0,0,0.8)" stroke-width="2">yafrican.com</text>
+</svg>`;
 
-    // CORNER WATERMARK - SIMPLE
-    const cornerWidth = Math.floor(width * 0.25);
-    const cornerHeight = Math.floor(cornerWidth * 0.2);
-    
-    const cornerSvg = `
-      <svg width="${cornerWidth}" height="${cornerHeight}" xmlns="http://www.w3.org/2000/svg">
-        <rect width="100%" height="100%" fill="rgba(0,0,0,0.8)" rx="5"/>
-        <text 
-          x="50%" 
-          y="55%" 
-          text-anchor="middle" 
-          dominant-baseline="middle"
-          font-family="Arial, sans-serif"
-          font-size="${cornerFontSize}"
-          font-weight="bold"
-          fill="white"
-        >
-          yafrican.com
-        </text>
-      </svg>
-    `;
-
-    const mainSvgBuffer = Buffer.from(watermarkSvg);
-    const cornerSvgBuffer = Buffer.from(cornerSvg);
+    const svgBuffer = Buffer.from(watermarkSvg);
     
     const watermarkedImage = await image
       .composite([
         {
-          input: mainSvgBuffer,
+          input: svgBuffer,
           gravity: 'center',
-          blend: 'over'
-        },
-        {
-          input: cornerSvgBuffer,
-          gravity: 'southeast',
           blend: 'over'
         }
       ])
@@ -453,7 +409,6 @@ export async function addCenteredVisibleWatermark(inputBuffer: Buffer): Promise<
   }
 }
 
-// ULTRA SIMPLE - GUARANTEED TO WORK
 export async function addProductionWatermark(inputBuffer: Buffer): Promise<Buffer> {
   try {
     const metadata = await sharp(inputBuffer).metadata();
@@ -461,10 +416,10 @@ export async function addProductionWatermark(inputBuffer: Buffer): Promise<Buffe
 
     if (!width || !height) throw new Error('Invalid image');
 
-    // SIMPLE BOTTOM RIGHT WATERMARK - ABSOLUTELY NO ERRORS
+    // SIMPLE BOTTOM RIGHT WATERMARK
     const watermarkSvg = `<svg width="${width}" height="${height}">
-  <rect x="${width-220}" y="${height-50}" width="210" height="40" fill="black" opacity="0.9" rx="5"/>
-  <text x="${width-115}" y="${height-25}" text-anchor="middle" font-size="24" font-weight="bold" fill="white">yafrican.com</text>
+<rect x="${width-220}" y="${height-50}" width="210" height="40" fill="black" opacity="0.9" rx="5"/>
+<text x="${width-115}" y="${height-25}" text-anchor="middle" font-size="24" font-weight="bold" fill="white">yafrican.com</text>
 </svg>`;
 
     return await sharp(inputBuffer)
@@ -474,30 +429,5 @@ export async function addProductionWatermark(inputBuffer: Buffer): Promise<Buffe
   } catch (error) {
     console.error('Production watermark failed, returning original');
     return inputBuffer;
-  }
-}
-
-// DIAGONAL WATERMARK - SIMPLE AND RELIABLE
-export async function addDiagonalWatermark(inputBuffer: Buffer): Promise<Buffer> {
-  try {
-    const metadata = await sharp(inputBuffer).metadata();
-    const { width, height } = metadata;
-
-    if (!width || !height) throw new Error('Invalid image');
-
-    const fontSize = Math.max(48, Math.floor(Math.min(width, height) * 0.06));
-
-    // SIMPLE DIAGONAL TEXT
-    const watermarkSvg = `<svg width="${width}" height="${height}">
-  <text x="50%" y="50%" text-anchor="middle" font-size="${fontSize}" font-weight="bold" fill="rgba(255,255,255,0.7)" stroke="black" stroke-width="2">yafrican.com</text>
-</svg>`;
-
-    return await sharp(inputBuffer)
-      .composite([{ input: Buffer.from(watermarkSvg), gravity: 'center' }])
-      .jpeg({ quality: 85 })
-      .toBuffer();
-  } catch (error) {
-    console.error('Diagonal watermark failed');
-    throw error;
   }
 }

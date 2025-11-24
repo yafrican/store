@@ -359,12 +359,13 @@
 // //     bodyParser: false,
 // //   },
 // // }
+// api/upload/route.ts - FIXED WITH NODE RUNTIME
+export const runtime = 'nodejs'; // ⚡️ CRITICAL FIX - FORCE NODE RUNTIME
 
-// api/upload/route.ts - PERMANENT FIX
 import { NextResponse } from 'next/server'
 import cloudinary from '@/lib/cloudinary'
 import { Readable } from 'stream'
-import { addCenteredVisibleWatermark, addProductionWatermark, addDiagonalWatermark } from '@/lib/watermark'
+import { addCenteredVisibleWatermark, addProductionWatermark } from '@/lib/watermark'
 
 // Helper function to convert Buffer to stream
 function bufferToStream(buffer: Buffer) {
@@ -381,7 +382,7 @@ function arrayBufferToBuffer(arrayBuffer: ArrayBuffer): Buffer {
 
 export async function POST(req: Request) {
   try {
-    console.log('🚀 UPLOAD: Starting upload process...')
+    console.log('🚀 UPLOAD: Starting upload process (NODE RUNTIME)...')
 
     const formData = await req.formData()
     const files = formData.getAll('images') as File[]
@@ -401,7 +402,6 @@ export async function POST(req: Request) {
         console.log(`\n--- Processing File ${index + 1}/${fileArray.length} ---`)
         console.log(`📄 File: ${file.name} (${Math.round(file.size / 1024)}KB)`)
 
-        // Validate file size
         if (file.size > 5 * 1024 * 1024) {
           throw new Error(`File ${file.name} is too large. Maximum size is 5MB.`)
         }
@@ -411,7 +411,7 @@ export async function POST(req: Request) {
 
         let watermarkApplied = false;
 
-        // Apply watermark with proper error handling
+        // Apply watermark if requested
         if (addWatermark) {
           console.log(`🎨 ADDING WATERMARK to: ${file.name}`);
           const originalBuffer = buffer;
@@ -425,23 +425,14 @@ export async function POST(req: Request) {
             console.error(`❌ Centered failed:`, error.message);
             
             try {
-              // Try diagonal watermark
-              buffer = await addDiagonalWatermark(originalBuffer);
+              // Fallback to production watermark
+              buffer = await addProductionWatermark(originalBuffer);
               watermarkApplied = true;
-              console.log(`✅ DIAGONAL watermark SUCCESS`);
+              console.log(`✅ PRODUCTION watermark SUCCESS`);
             } catch (error2: any) {
-              console.error(`❌ Diagonal failed:`, error2.message);
-              
-              try {
-                // Final fallback - production watermark
-                buffer = await addProductionWatermark(originalBuffer);
-                watermarkApplied = true;
-                console.log(`✅ PRODUCTION watermark SUCCESS`);
-              } catch (error3: any) {
-                console.error(`❌ All watermarks failed, using original image`);
-                buffer = originalBuffer;
-                watermarkApplied = false;
-              }
+              console.error(`❌ All watermarks failed, using original image`);
+              buffer = originalBuffer;
+              watermarkApplied = false;
             }
           }
         }
@@ -498,7 +489,9 @@ export async function POST(req: Request) {
       throw new Error('All file uploads failed')
     }
 
-    console.log('🎉 ALL UPLOADS COMPLETED')
+    console.log('🎉 ALL UPLOADS COMPLETED SUCCESSFULLY')
+    console.log('📋 RESULTS:', uploadedUrls)
+
     return NextResponse.json({
       success: true,
       urls: uploadedUrls,
@@ -507,7 +500,7 @@ export async function POST(req: Request) {
     })
 
   } catch (error: any) {
-    console.error('💥 UPLOAD ERROR:', error.message)
+    console.error('💥 CRITICAL UPLOAD ERROR:', error.message)
     return NextResponse.json(
       {
         success: false,
