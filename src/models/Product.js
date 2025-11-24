@@ -83,7 +83,10 @@ const ProductSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
-  
+  deliveryLocations: {
+    type: [String],
+    default: []
+  },
   // Product Details
   rating: {
     type: Number,

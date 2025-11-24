@@ -126,6 +126,8 @@ export async function GET(request: Request) {
         isNew: product.isNew || false,
         isOnSale: product.isOnSale || false,
         salePrice: product.salePrice || null,
+            deliveryLocations: product.deliveryLocations || [],
+
         createdAt: product.createdAt,
         updatedAt: product.updatedAt,
       }
@@ -169,7 +171,8 @@ export async function POST(request: Request) {
     const description = formData.get('description') as string
     const stock = formData.get('stock') as string
     const imageFiles = formData.getAll('images') as File[]
-
+const deliveryLocationsInput = formData.get('deliveryLocations') as string
+const deliveryLocations = deliveryLocationsInput ? JSON.parse(deliveryLocationsInput) : []
     console.log('📋 Product data:', { 
       name, 
       price, 
@@ -271,7 +274,9 @@ export async function POST(request: Request) {
       stock: stockQuantity,
       inStock: inStock,
       status: 'pending', // New products require admin approval
-      seller: null, // This should come from authenticated user in real scenario
+      seller: null, 
+        deliveryLocations: deliveryLocations,
+// This should come from authenticated user in real scenario
     })
 
     console.log('💾 Saving product to database...')

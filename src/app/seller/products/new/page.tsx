@@ -2528,6 +2528,8 @@ interface ProductFormData {
   specifications: {
     [key: string]: string | number | boolean
   }
+    deliveryLocations: string[] // Add this
+
 }
 
 // CORRECT mapping - matches MongoDB schema
@@ -2598,6 +2600,7 @@ export default function CreateProductPage() {
     description: '',
     stock: '1',
     images: [],
+    deliveryLocations: [], // Add this - empty array initially
     specifications: {}
   })
 
@@ -2737,7 +2740,8 @@ export default function CreateProductPage() {
         if (!formData.category) return 'Category is required'
         if (!formData.description.trim()) return 'Description is required'
         if (!formData.stock || parseInt(formData.stock) < 0) return 'Valid stock quantity is required'
-        return null
+        if (formData.deliveryLocations.length === 0) return 'Please add at least one delivery area'
+  return null
 
       case 'specifications':
         if (categoryConfig) {
@@ -2943,6 +2947,7 @@ export default function CreateProductPage() {
 
           const formData = new FormData()
           formData.append('file', file)
+
           formData.append('upload_preset', 'ml_default')
           formData.append('cloud_name', 'dxuhyn4ue')
           
@@ -3030,7 +3035,9 @@ export default function CreateProductPage() {
         stock: parseInt(formData.stock) || 1,
         inStock: parseInt(formData.stock) > 0,
         status: 'pending',
-        specifications: formData.specifications
+        specifications: formData.specifications,
+          deliveryLocations: formData.deliveryLocations // Add this line
+
       }
 
       console.log('📦 Sending product data to API:', productData)
@@ -3238,6 +3245,77 @@ export default function CreateProductPage() {
                 placeholder="Describe your product in detail..."
               />
             </div>
+            {/* Delivery Locations */}
+<div>
+  <label className="block text-sm font-medium text-gray-700 mb-2">
+    Delivery Areas *
+  </label>
+  <div className="space-y-3">
+    <div className="flex gap-2">
+      <input
+        type="text"
+        placeholder="Add delivery area (e.g., Addis Ababa, Bole)"
+        className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        onKeyPress={(e) => {
+          if (e.key === 'Enter') {
+            e.preventDefault()
+            const input = e.target as HTMLInputElement
+            const value = input.value.trim()
+            if (value && !formData.deliveryLocations.includes(value)) {
+              setFormData(prev => ({
+                ...prev,
+                deliveryLocations: [...prev.deliveryLocations, value]
+              }))
+              input.value = ''
+            }
+          }
+        }}
+      />
+      <button
+        type="button"
+        onClick={() => {
+          const input = document.querySelector('input[placeholder*="Add delivery area"]') as HTMLInputElement
+          const value = input?.value.trim()
+          if (value && !formData.deliveryLocations.includes(value)) {
+            setFormData(prev => ({
+              ...prev,
+              deliveryLocations: [...prev.deliveryLocations, value]
+            }))
+            input.value = ''
+          }
+        }}
+        className="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+      >
+        Add
+      </button>
+    </div>
+    
+    {/* Selected locations */}
+    {formData.deliveryLocations.length > 0 && (
+      <div className="flex flex-wrap gap-2">
+        {formData.deliveryLocations.map((location, index) => (
+          <span key={index} className="inline-flex items-center gap-1 px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+            {location}
+            <button
+              type="button"
+              onClick={() => setFormData(prev => ({
+                ...prev,
+                deliveryLocations: prev.deliveryLocations.filter((_, i) => i !== index)
+              }))}
+              className="hover:text-blue-900"
+            >
+              ×
+            </button>
+          </span>
+        ))}
+      </div>
+    )}
+    
+    <p className="text-sm text-gray-500">
+      Add areas where you can deliver this product. Press Enter or click Add to add each location.
+    </p>
+  </div>
+</div>
           </div>
         )
 

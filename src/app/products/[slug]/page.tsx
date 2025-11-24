@@ -31,6 +31,8 @@ type Product = {
   salePrice?: number
   stock?: number
   specifications?: Record<string, string>
+    deliveryLocations?: string[] // ✅ ADD THIS
+
   brand?: string
   sku?: string
   image?: string
@@ -51,6 +53,8 @@ type RelatedProduct = {
   salePrice?: number
   stock?: number
   specifications?: Record<string, string>
+    deliveryLocations?: string[] // ✅ ADD THIS
+
   brand?: string
   identifier?: string // Add this
 }
@@ -129,7 +133,17 @@ export default function ProductDetailPage() {
     stock: product.stock || 10,
     category: product.category || 'General',
   })
-
+// In your product detail page, add this useEffect
+useEffect(() => {
+  if (product) {
+    console.log('📦 Product data from API:', {
+      name: product.name,
+      deliveryLocations: product.deliveryLocations,
+      hasDeliveryLocations: !!product.deliveryLocations,
+      deliveryLocationsLength: product.deliveryLocations?.length || 0
+    })
+  }
+}, [product])
   const getWishlistProduct = (product: Product) => ({
     _id: product._id,
     name: product.name,
@@ -699,7 +713,27 @@ const RelatedProductsSection = () => {
                 </p>
               </div>
             )}
-
+{/* Delivery Locations
+{product.deliveryLocations && product.deliveryLocations.length > 0 && (
+  <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
+    <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+      📦 Available Delivery Areas
+    </h3>
+    <div className="flex flex-wrap gap-2">
+      {product.deliveryLocations.map((location, index) => (
+        <span 
+          key={index}
+          className="inline-flex items-center gap-1 px-3 py-2 bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300 rounded-full text-sm font-medium border border-green-200 dark:border-green-800"
+        >
+          🚚 {location}
+        </span>
+      ))}
+    </div>
+    <p className="text-sm text-gray-600 dark:text-gray-400 mt-2">
+      We deliver to these locations
+    </p>
+  </div>
+)} */}
             {/* Action Buttons */}
             <div className="space-y-4">
               {/* Quantity Selector */}
@@ -859,21 +893,23 @@ const RelatedProductsSection = () => {
         {/* Additional Product Info Tabs */}
         <div className="mt-12 bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
           <div className="border-b border-gray-200 dark:border-gray-700">
-            <nav className="flex space-x-8">
-              {['description', 'specifications'].map((tab) => (
-                <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`py-6 px-4 border-b-2 font-semibold text-lg capitalize transition-colors ${
-                    activeTab === tab
-                      ? 'border-black dark:border-white text-gray-900 dark:text-white'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
-                  }`}
-                >
-                  {tab === 'description' ? 'Description' : 'Specifications'}
-                </button>
-              ))}
-            </nav>
+  <nav className="flex space-x-8">
+  {['description', 'specifications', 'delivery'].map((tab) => (
+    <button
+      key={tab}
+      onClick={() => setActiveTab(tab)}
+      className={`py-6 px-4 border-b-2 font-semibold text-lg capitalize transition-colors ${
+        activeTab === tab
+          ? 'border-black dark:border-white text-gray-900 dark:text-white'
+          : 'border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+      }`}
+    >
+      {tab === 'description' ? 'Description' : 
+       tab === 'specifications' ? 'Specifications' : 
+       'Delivery Info'}
+    </button>
+  ))}
+</nav>
           </div>
 
           <div className="p-8">
@@ -938,8 +974,78 @@ const RelatedProductsSection = () => {
                 </div>
               </div>
             )}
+            {/* ✅ MOVE THE DELIVERY TAB CONTENT HERE - INSIDE THE TAB CONTAINER */}
+    {activeTab === 'delivery' && (
+      <div className="space-y-6">
+        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
+          🚚 Delivery Information
+        </h3>
+        
+        {/* Delivery Locations */}
+        {product.deliveryLocations && product.deliveryLocations.length > 0 ? (
+          <div className="space-y-4">
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Available Delivery Areas
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {product.deliveryLocations.map((location, index) => (
+                <div 
+                  key={index}
+                  className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl"
+                >
+                  <div className="w-8 h-8 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center">
+                    <TruckIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  </div>
+                  <span className="font-medium text-green-800 dark:text-green-300">
+                    {location}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              We deliver to these locations. Contact us for delivery outside these areas.
+            </p>
+          </div>
+        ) : (
+          <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+            <TruckIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+              No Delivery Information Available
+            </h4>
+            <p className="text-gray-600 dark:text-gray-400">
+              Please contact the seller for delivery options.
+            </p>
+          </div>
+        )}
+
+        {/* Additional Delivery Info */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+          <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
+            <div className="flex items-center gap-3 mb-3">
+              <TruckIcon className="w-6 h-6 text-blue-500" />
+              <h4 className="font-bold text-blue-900 dark:text-blue-300">Shipping Time</h4>
+            </div>
+            <p className="text-blue-800 dark:text-blue-200 text-sm">
+              Usually delivered within 2-5 business days after order confirmation.
+            </p>
+          </div>
+
+          <div className="bg-amber-50 dark:bg-amber-900/20 p-6 rounded-xl border border-amber-200 dark:border-amber-800">
+            <div className="flex items-center gap-3 mb-3">
+              <ShieldCheckIcon className="w-6 h-6 text-amber-500" />
+              <h4 className="font-bold text-amber-900 dark:text-amber-300">Delivery Policy</h4>
+            </div>
+            <p className="text-amber-800 dark:text-amber-200 text-sm">
+              Free shipping on orders over 500 Birr. Contact seller for exact delivery charges.
+            </p>
           </div>
         </div>
+      </div>
+    )}
+  </div>
+</div>
+
+        
 
         {/* Related Products Section */}
         <RelatedProductsSection />

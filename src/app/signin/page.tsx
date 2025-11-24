@@ -186,7 +186,7 @@ function SignInContent() {
       />
       
       {/* Left Side - Brand Section */}
-      <div className="hidden lg:flex lg:flex-1 relative bg-gradient-to-br from-gray-900 via-gray-800 to-amber-900">
+      <div className="hidden lg:flex lg:flex-1 relative bg-linear-to-br from-gray-900 via-gray-800 to-amber-900">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
           style={{
@@ -385,7 +385,7 @@ function SignInContent() {
                 disabled={loading}
                 whileHover={{ scale: loading ? 1 : 1.02 }}
                 whileTap={{ scale: loading ? 1 : 0.98 }}
-                className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-gray-900 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full bg-linear-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-gray-900 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
                   <div className="flex items-center justify-center space-x-2">

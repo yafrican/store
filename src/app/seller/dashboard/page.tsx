@@ -1187,7 +1187,7 @@ function ProductsTable({
                 />
                 <div>
                   <div className="font-medium text-gray-900">{product.name || 'Unnamed Product'}</div>
-                  <div className="text-sm text-gray-500">${product.price || 0}</div>
+                  <div className="text-sm text-gray-500">Birr{product.price || 0}</div>
                 </div>
               </div>
             </div>
@@ -1270,7 +1270,7 @@ function ProductsTable({
                   </div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-semibold text-gray-900">${product.price || 0}</div>
+                  <div className="text-sm font-semibold text-gray-900">Birr{product.price || 0}</div>
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   {getStatusBadge(product.status)}

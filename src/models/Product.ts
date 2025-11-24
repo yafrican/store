@@ -15,7 +15,8 @@ export interface IProduct extends Omit<Document, 'isNew'> {
   inStock: boolean
   stock: number
   seller: mongoose.Types.ObjectId
-  
+    deliveryLocations: string[]
+
   // Product Details
   rating?: number
   reviewCount?: number
@@ -47,6 +48,7 @@ const ProductSchema = new Schema<IProduct>(
       trim: true,
       maxlength: [100, 'Product name cannot exceed 100 characters']
     },
+    
     slug: { type: String, unique: true, sparse: true },
     price: { 
       type: Number, 
@@ -118,7 +120,21 @@ const ProductSchema = new Schema<IProduct>(
       ref: 'User',
       required: true
     },
-    
+     deliveryLocations: {
+      type: [String],
+      default: []
+    },
+//     deliveryLocations: {
+//   type: [String],
+//   default: [],
+//   validate: {
+//     validator: function(locations: string[]) {
+//       return locations.length <= 10 && 
+//              locations.every(loc => loc.length <= 50) // Each location max 50 chars
+//     },
+//     message: 'Max 10 locations, each under 50 characters'
+//   }
+// }
     // Product Details
     rating: {
       type: Number,

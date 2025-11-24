@@ -144,6 +144,8 @@ export async function GET(req: Request) {
         stock: product.stock || 0,
         seller: product.seller,
         specifications: safeSpecifications,
+            deliveryLocations: product.deliveryLocations || [], // ✅ ADD THIS LINE
+
         createdAt: product.createdAt,
         updatedAt: product.updatedAt
       }
@@ -247,7 +249,8 @@ const validCategories = [
       status: 'pending',
       inStock: stock > 0,
       stock: stock,
-      specifications: safeSpecifications
+      specifications: safeSpecifications,
+       deliveryLocations: Array.isArray(data.deliveryLocations) ? data.deliveryLocations : [] // ✅ ADD THIS LINE
     }
 
     console.log('📦 Creating product with validated data:', productData)
@@ -272,6 +275,7 @@ const validCategories = [
       stock: product.stock,
       seller: product.seller,
       specifications: createdSpecifications,
+        deliveryLocations: product.deliveryLocations || [], // ✅ ADD THIS LINE
       createdAt: product.createdAt,
       updatedAt: product.updatedAt
     }

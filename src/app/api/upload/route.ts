@@ -360,11 +360,11 @@
 // //   },
 // // }
 
-// api/upload/route.ts - PRODUCTION READY
+// api/upload/route.ts - PERMANENT FIX
 import { NextResponse } from 'next/server'
 import cloudinary from '@/lib/cloudinary'
 import { Readable } from 'stream'
-import { addProductionWatermark, addFallbackWatermark } from '@/lib/watermark'
+import { addCenteredVisibleWatermark, addProductionWatermark, addDiagonalWatermark } from '@/lib/watermark'
 
 // Helper function to convert Buffer to stream
 function bufferToStream(buffer: Buffer) {
@@ -381,7 +381,7 @@ function arrayBufferToBuffer(arrayBuffer: ArrayBuffer): Buffer {
 
 export async function POST(req: Request) {
   try {
-    console.log('🚀 PRODUCTION: Starting upload process...')
+    console.log('🚀 UPLOAD: Starting upload process...')
 
     const formData = await req.formData()
     const files = formData.getAll('images') as File[]
@@ -394,16 +394,15 @@ export async function POST(req: Request) {
     const uploadedUrls: string[] = []
     const fileArray = files.slice(0, 4)
 
-    console.log(`📤 Processing ${fileArray.length} files, watermark required: ${addWatermark}`)
+    console.log(`📤 Processing ${fileArray.length} files, watermark: ${addWatermark}`)
 
     for (const [index, file] of fileArray.entries()) {
       try {
         console.log(`\n--- Processing File ${index + 1}/${fileArray.length} ---`)
         console.log(`📄 File: ${file.name} (${Math.round(file.size / 1024)}KB)`)
 
-        // Validate file size (max 5MB per file)
+        // Validate file size
         if (file.size > 5 * 1024 * 1024) {
-          console.error(`❌ File too large: ${file.name}`)
           throw new Error(`File ${file.name} is too large. Maximum size is 5MB.`)
         }
 
@@ -411,44 +410,45 @@ export async function POST(req: Request) {
         let buffer = arrayBufferToBuffer(arrayBuffer)
 
         let watermarkApplied = false;
-        let watermarkError = null;
 
-        // Apply watermark if requested - WITH PROPER ERROR HANDLING
+        // Apply watermark with proper error handling
         if (addWatermark) {
-          console.log(`🎨 ATTEMPTING WATERMARK: ${file.name}`)
-          
-          const originalBuffer = buffer; // Store original for fallback
+          console.log(`🎨 ADDING WATERMARK to: ${file.name}`);
+          const originalBuffer = buffer;
           
           try {
-            // Try production watermark first
-            buffer = await addProductionWatermark(buffer);
+            // Try centered watermark first
+            buffer = await addCenteredVisibleWatermark(originalBuffer);
             watermarkApplied = true;
-            console.log(`✅ PRIMARY WATERMARK SUCCESS: ${file.name}`);
+            console.log(`✅ CENTERED watermark SUCCESS`);
+          } catch (error: any) {
+            console.error(`❌ Centered failed:`, error.message);
             
-          } catch (primaryError) {
-            watermarkError = primaryError;
-            console.error(`❌ PRIMARY WATERMARK FAILED:`, primaryError);
-            
-            // Try fallback watermark
             try {
-              console.log(`🔄 ATTEMPTING FALLBACK WATERMARK...`);
-              buffer = await addFallbackWatermark(originalBuffer);
+              // Try diagonal watermark
+              buffer = await addDiagonalWatermark(originalBuffer);
               watermarkApplied = true;
-              console.log(`✅ FALLBACK WATERMARK SUCCESS: ${file.name}`);
+              console.log(`✅ DIAGONAL watermark SUCCESS`);
+            } catch (error2: any) {
+              console.error(`❌ Diagonal failed:`, error2.message);
               
-            } catch (fallbackError) {
-              console.error(`❌ ALL WATERMARK METHODS FAILED:`, fallbackError);
-              // Continue with original image (no watermark)
-              buffer = originalBuffer;
-              watermarkApplied = false;
-              console.log(`⚠️ UPLOADING WITHOUT WATERMARK: ${file.name}`);
+              try {
+                // Final fallback - production watermark
+                buffer = await addProductionWatermark(originalBuffer);
+                watermarkApplied = true;
+                console.log(`✅ PRODUCTION watermark SUCCESS`);
+              } catch (error3: any) {
+                console.error(`❌ All watermarks failed, using original image`);
+                buffer = originalBuffer;
+                watermarkApplied = false;
+              }
             }
           }
         }
 
         const stream = bufferToStream(buffer)
 
-        // Generate unique filename with watermark status
+        // Generate unique filename
         const timestamp = Date.now()
         const randomString = Math.random().toString(36).substring(2, 15)
         const originalName = file.name.replace(/\.[^/.]+$/, "").substring(0, 20)
@@ -483,18 +483,13 @@ export async function POST(req: Request) {
         if (result.secure_url) {
           uploadedUrls.push(result.secure_url)
           console.log(`✅ UPLOAD SUCCESS: ${result.secure_url}`)
-          
-          // Log watermark status for this file
-          if (addWatermark) {
-            console.log(`💧 WATERMARK STATUS: ${watermarkApplied ? 'APPLIED' : 'FAILED'}`)
-          }
+          console.log(`💧 WATERMARK STATUS: ${watermarkApplied ? 'APPLIED' : 'FAILED'}`)
         } else {
           throw new Error('No secure_url in Cloudinary response')
         }
 
-      } catch (fileError) {
-        console.error(`❌ FILE PROCESSING FAILED: ${file.name}`, fileError)
-        // Continue with other files
+      } catch (fileError: any) {
+        console.error(`❌ FILE PROCESSING FAILED: ${file.name}`, fileError.message)
         continue
       }
     }
@@ -503,9 +498,7 @@ export async function POST(req: Request) {
       throw new Error('All file uploads failed')
     }
 
-    console.log('🎉 ALL UPLOADS COMPLETED SUCCESSFULLY')
-    console.log('📋 RESULTS:', uploadedUrls)
-
+    console.log('🎉 ALL UPLOADS COMPLETED')
     return NextResponse.json({
       success: true,
       urls: uploadedUrls,
@@ -513,12 +506,12 @@ export async function POST(req: Request) {
       watermarked: addWatermark
     })
 
-  } catch (error) {
-    console.error('💥 CRITICAL UPLOAD ERROR:', error)
+  } catch (error: any) {
+    console.error('💥 UPLOAD ERROR:', error.message)
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : 'Server error during upload',
+        error: error.message || 'Server error during upload',
       },
       { status: 500 }
     )

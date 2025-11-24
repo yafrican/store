@@ -1,3 +1,4 @@
+
 // 'use client'
 
 // import { useState } from 'react'
@@ -5,7 +6,7 @@
 // import { motion, AnimatePresence } from 'framer-motion'
 // import { useRouter } from 'next/navigation'
 // import { FcGoogle } from 'react-icons/fc'
-// import { FaFacebook, FaEye, FaEyeSlash, FaCheck, FaUser, FaStore } from 'react-icons/fa'
+// import { FaFacebook, FaEye, FaEyeSlash, FaCheck, FaUser, FaStore, FaPhone, FaEnvelope } from 'react-icons/fa'
 // import { toast } from 'react-toastify'
 
 // export default function RegisterPage() {
@@ -15,11 +16,11 @@
 //     phone: '',
 //     password: '',
 //     confirmPassword: '',
-//     storeName: '', // Only for sellers
-//     address: '',   // Only for sellers
-//     paymentMethod: '' // Only for sellers
+//     storeName: '',
+//     address: '',
+//     paymentMethod: '',
 //   })
-//     const router = useRouter()
+//   const router = useRouter()
 
 //   const [role, setRole] = useState<'customer' | 'seller'>('customer')
 //   const [error, setError] = useState('')
@@ -32,6 +33,58 @@
 //       ...formData,
 //       [e.target.name]: e.target.value
 //     })
+//   }
+
+//   // Send OTP and redirect to verification page
+//   const sendOTP = async () => {
+//     if (!formData.email) {
+//       toast.error('Email is required to send OTP')
+//       return
+//     }
+
+//     // Basic email validation
+//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+//     if (!emailRegex.test(formData.email)) {
+//       toast.error('Please enter a valid email address')
+//       return
+//     }
+
+//     setLoading(true)
+//     try {
+//       const res = await fetch('/api/auth/send-otp', {
+//         method: 'POST',
+//         headers: { 'Content-Type': 'application/json' },
+//         body: JSON.stringify({ 
+//           email: formData.email,
+//           name: formData.name,
+//           role: role 
+//         })
+//       })
+
+//       const data = await res.json()
+
+//       if (res.ok) {
+//         toast.success('OTP sent to your email! Redirecting...')
+        
+//         // Store form data in sessionStorage for the verification page
+//         const registrationData = {
+//           ...formData,
+//           role
+//         }
+//         sessionStorage.setItem('registrationData', JSON.stringify(registrationData))
+        
+//         // Redirect to OTP verification page
+//         setTimeout(() => {
+//           router.push(`/register/verify-otp?email=${encodeURIComponent(formData.email)}`)
+//         }, 1500)
+//       } else {
+//         toast.error(data.error || 'Failed to send OTP')
+//       }
+//     } catch (error) {
+//       console.error('OTP send error:', error)
+//       toast.error('Failed to send OTP. Please try again.')
+//     }
+//     setLoading(false)
 //   }
 
 //   const handleSubmit = async (e: React.FormEvent) => {
@@ -76,87 +129,8 @@
 //       }
 //     }
 
-//     setLoading(true)
-    
-//     // Show loading toast
-//     const loadingToast = toast.loading('Creating your account...')
-
-//     try {
-//       // Prepare data for API - only send relevant fields based on role
-//       const submitData = {
-//         name: formData.name,
-//         email: formData.email,
-//         phone: formData.phone,
-//         password: formData.password,
-//         role: role
-//       }
-
-//       // Add seller-specific fields only if role is seller
-//       if (role === 'seller') {
-//         Object.assign(submitData, {
-//           storeName: formData.storeName,
-//           address: formData.address,
-//           paymentMethod: formData.paymentMethod
-//         })
-//       }
-
-//       const res = await fetch('/api/auth/register', {
-//         method: 'POST',
-//         headers: { 'Content-Type': 'application/json' },
-//         body: JSON.stringify(submitData),
-//       })
-      
-//       const data = await res.json()
-      
-//       if (!res.ok) {
-//         // Update loading toast to error
-//         toast.update(loadingToast, {
-//           render: data.error || 'Registration failed',
-//           type: 'error',
-//           isLoading: false,
-//           autoClose: 5000
-//         })
-//         setError(data.error || 'Registration failed')
-//       } else {
-//         // Update loading toast to success
-//         toast.update(loadingToast, {
-//           render: `🎉 Successfully registered as ${role}!`,
-//           type: 'success',
-//           isLoading: false,
-//           autoClose: 5000
-//         })
-        
-//         // Show additional success message
-//         toast.success(`Welcome to Yafrican! ${role === 'seller' ? 'Your seller account is ready.' : 'Start shopping now!'}`)
-        
-//         // Reset form
-//         setFormData({
-//           name: '',
-//           email: '',
-//           phone: '',
-//           password: '',
-//           confirmPassword: '',
-//           storeName: '',
-//           address: '',
-//           paymentMethod: ''
-//         })
-//         setRole('customer')
-//             router.push('/signin')
-
-//       }
-      
-//     } catch (error) {
-//       console.error('Registration error:', error)
-//       // Update loading toast to error
-//       toast.update(loadingToast, {
-//         render: 'Something went wrong. Please try again.',
-//         type: 'error',
-//         isLoading: false,
-//         autoClose: 5000
-//       })
-//       setError('Something went wrong. Please try again.')
-//     }
-//     setLoading(false)
+//     // Instead of registering directly, send OTP and redirect
+//     await sendOTP()
 //   }
 
 //   const containerVariants = {
@@ -199,9 +173,9 @@
 //   }
 
 //   return (
-//     <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
+//     <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900 mb">
 //       {/* Left Side - Image Section */}
-//       <div className="hidden lg:flex lg:flex-1 relative bg-gradient-to-br from-gray-900 via-gray-800 to-amber-900">
+//       <div className="hidden lg:flex lg:flex-1 relative bg-linear-to-br from-gray-900 via-gray-800 to-amber-900">
 //         <div 
 //           className="absolute inset-0 bg-cover bg-center bg-no-repeat opacity-20"
 //           style={{
@@ -522,15 +496,15 @@
 //                 disabled={loading}
 //                 whileHover={{ scale: loading ? 1 : 1.02 }}
 //                 whileTap={{ scale: loading ? 1 : 0.98 }}
-//                 className="w-full bg-gradient-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-gray-900 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+//                 className="w-full bg-linear-to-r from-yellow-500 to-amber-500 hover:from-yellow-600 hover:to-amber-600 text-gray-900 py-4 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
 //               >
 //                 {loading ? (
 //                   <div className="flex items-center justify-center space-x-2">
 //                     <div className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
-//                     <span>Creating Account...</span>
+//                     <span>Sending OTP...</span>
 //                   </div>
 //                 ) : (
-//                   `Create ${role === 'seller' ? 'Seller' : 'Customer'} Account`
+//                   `Continue to Verify Email`
 //                 )}
 //               </motion.button>
 //             </form>
@@ -695,17 +669,8 @@ export default function RegisterPage() {
       return setError('Passwords do not match')
     }
 
-    // Seller-specific validation
-    if (role === 'seller') {
-      if (!formData.storeName) {
-        toast.error('Store name is required for sellers')
-        return setError('Store name is required for sellers')
-      }
-      if (!formData.address) {
-        toast.error('Address is required for sellers')
-        return setError('Address is required for sellers')
-      }
-    }
+    // REMOVED: Seller-specific validation - all fields are now optional
+    // Sellers can register with just basic info and complete profile later
 
     // Instead of registering directly, send OTP and redirect
     await sendOTP()
@@ -751,7 +716,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen flex bg-gray-50 dark:bg-gray-900 mb-20">
       {/* Left Side - Image Section */}
       <div className="hidden lg:flex lg:flex-1 relative bg-linear-to-br from-gray-900 via-gray-800 to-amber-900">
         <div 
@@ -906,7 +871,7 @@ export default function RegisterPage() {
               {/* Common Fields */}
               <motion.div variants={itemVariants}>
                 <label htmlFor="name" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Full Name
+                  Full Name *
                 </label>
                 <input
                   id="name"
@@ -922,7 +887,7 @@ export default function RegisterPage() {
 
               <motion.div variants={itemVariants}>
                 <label htmlFor="email" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Email Address
+                  Email Address *
                 </label>
                 <input
                   id="email"
@@ -939,7 +904,7 @@ export default function RegisterPage() {
 
               <motion.div variants={itemVariants}>
                 <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Phone Number
+                  Phone Number *
                 </label>
                 <input
                   id="phone"
@@ -965,9 +930,9 @@ export default function RegisterPage() {
                     exit="hidden"
                     className="space-y-6 overflow-hidden"
                   >
-                    <motion.div variants={itemVariants}>
+                    {/* <motion.div variants={itemVariants}>
                       <label htmlFor="storeName" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                        Store Name *
+                        Store Name <span className="text-gray-400 text-sm">(optional - can add later)</span>
                       </label>
                       <input
                         id="storeName"
@@ -976,14 +941,13 @@ export default function RegisterPage() {
                         value={formData.storeName}
                         onChange={handleChange}
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                        placeholder="Your store name"
-                        required
+                        placeholder="Your store name (optional)"
                       />
-                    </motion.div>
+                    </motion.div> */}
 
                     <motion.div variants={itemVariants}>
                       <label htmlFor="address" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                        Business Address *
+                        Business Address <span className="text-gray-400 text-sm">(optional - can add later)</span>
                       </label>
                       <input
                         id="address"
@@ -992,14 +956,13 @@ export default function RegisterPage() {
                         value={formData.address}
                         onChange={handleChange}
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                        placeholder="Your business address"
-                        required
+                        placeholder="Your business address (optional)"
                       />
                     </motion.div>
 
-                    <motion.div variants={itemVariants}>
+                    {/* <motion.div variants={itemVariants}>
                       <label htmlFor="paymentMethod" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                        Preferred Payment Method
+                        Preferred Payment Method <span className="text-gray-400 text-sm">(optional - can add later)</span>
                       </label>
                       <input
                         id="paymentMethod"
@@ -1008,9 +971,9 @@ export default function RegisterPage() {
                         value={formData.paymentMethod}
                         onChange={handleChange}
                         className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:border-transparent transition-all duration-300 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
-                        placeholder="Bank transfer, Mobile money, etc."
+                        placeholder="Bank transfer, Mobile money, etc. (optional)"
                       />
-                    </motion.div>
+                    </motion.div> */}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -1018,7 +981,7 @@ export default function RegisterPage() {
               {/* Password Fields */}
               <motion.div variants={itemVariants}>
                 <label htmlFor="password" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Password
+                  Password *
                 </label>
                 <div className="relative">
                   <input
@@ -1044,7 +1007,7 @@ export default function RegisterPage() {
 
               <motion.div variants={itemVariants}>
                 <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                  Confirm Password
+                  Confirm Password *
                 </label>
                 <div className="relative">
                   <input
@@ -1093,26 +1056,6 @@ export default function RegisterPage() {
               <span className="px-4 text-gray-500 dark:text-gray-400 text-sm">Or continue with</span>
               <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
             </motion.div>
-
-            {/* Social Login */}
-            {/* <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 mb-6">
-              <button
-                type="button"
-                onClick={() => toast.info('Google login coming soon!')}
-                className="flex items-center justify-center space-x-2 p-3 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300"
-              >
-                <FcGoogle className="w-5 h-5" />
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Google</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => toast.info('Facebook login coming soon!')}
-                className="flex items-center justify-center space-x-2 p-3 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300 text-blue-600 dark:text-blue-400"
-              >
-                <FaFacebook className="w-5 h-5" />
-                <span className="text-sm font-medium">Facebook</span>
-              </button>
-            </motion.div> */}
 
             {/* Sign In Link */}
             <motion.div variants={itemVariants} className="text-center">

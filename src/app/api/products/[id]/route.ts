@@ -86,6 +86,8 @@ export async function GET(
       ...product.toObject(),
       _id: product._id.toString(),
       images: processedImages,
+            deliveryLocations: product.deliveryLocations || [],
+
       // Ensure compatibility fields
       image: processedImages[0] || '', // For WishlistContext compatibility
       isDemo: false, // Mark as real product
@@ -95,7 +97,9 @@ export async function GET(
       name: processedProduct.name,
       imagesCount: processedProduct.images.length,
       firstImage: processedProduct.images[0]?.substring(0, 50) + '...',
-      seller: processedProduct.seller?.storeName || 'No seller'
+      seller: processedProduct.seller?.storeName || 'No seller',
+      deliveryLocationsCount: processedProduct.deliveryLocations?.length || 0 // ✅ Add this log
+
     })
 
     return NextResponse.json(processedProduct)
