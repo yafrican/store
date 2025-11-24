@@ -358,76 +358,58 @@
 //   }
 // }
 
-// lib/watermark.ts - SIMPLIFIED & WORKING
-import sharp from 'sharp';
+// lib/watermark.ts
+import sharp from "sharp";
 
-export async function addCenteredVisibleWatermark(inputBuffer: Buffer): Promise<Buffer> {
-  try {
-    console.log('🔧 Adding CENTERED VISIBLE watermark...');
-    
-    const image = sharp(inputBuffer);
-    const metadata = await image.metadata();
-    
-    if (!metadata.width || !metadata.height) {
-      throw new Error('Could not read image dimensions');
-    }
+// Centered watermark
+export async function addCenteredVisibleWatermark(input: Buffer): Promise<Buffer> {
+  const image = sharp(input);
+  const meta = await image.metadata();
 
-    const { width, height } = metadata;
-    
-    // Calculate font size
-    const fontSize = Math.max(60, Math.floor(Math.min(width, height) * 0.08));
-    
-    console.log(`🔧 Using font size: ${fontSize}px for ${width}x${height} image`);
+  if (!meta.width || !meta.height) throw new Error("Invalid image dimensions");
 
-    // SIMPLE CENTERED WATERMARK - NO COMPLEX SVG
-    const watermarkSvg = `<svg width="${width}" height="${height}">
-<text x="50%" y="50%" text-anchor="middle" font-family="Arial" font-size="${fontSize}" font-weight="bold" fill="rgba(255,255,255,0.8)" stroke="rgba(0,0,0,0.8)" stroke-width="2">yafrican.com</text>
-</svg>`;
+  const font = Math.floor(Math.min(meta.width, meta.height) * 0.08);
 
-    const svgBuffer = Buffer.from(watermarkSvg);
-    
-    const watermarkedImage = await image
-      .composite([
-        {
-          input: svgBuffer,
-          gravity: 'center',
-          blend: 'over'
-        }
-      ])
-      .jpeg({ 
-        quality: 85,
-        mozjpeg: true 
-      })
-      .toBuffer();
+  const svg = `
+    <svg width="${meta.width}" height="${meta.height}">
+      <text x="50%" y="50%" text-anchor="middle"
+        font-family="Arial" font-size="${font}" font-weight="bold"
+        fill="rgba(255,255,255,0.85)"
+        stroke="rgba(0,0,0,0.8)" stroke-width="2">
+        yafrican.com
+      </text>
+    </svg>
+  `;
 
-    console.log('✅ CENTERED VISIBLE watermark applied');
-    return watermarkedImage;
-
-  } catch (error) {
-    console.error('❌ Centered watermark failed:', error);
-    throw error;
-  }
+  return image
+    .composite([{ input: Buffer.from(svg), gravity: "center" }])
+    .jpeg({ quality: 85 })
+    .toBuffer();
 }
 
-export async function addProductionWatermark(inputBuffer: Buffer): Promise<Buffer> {
+// Fallback watermark
+export async function addProductionWatermark(input: Buffer): Promise<Buffer> {
   try {
-    const metadata = await sharp(inputBuffer).metadata();
-    const { width, height } = metadata;
+    const meta = await sharp(input).metadata();
+    if (!meta.width || !meta.height) return input;
 
-    if (!width || !height) throw new Error('Invalid image');
+    const svg = `
+      <svg width="${meta.width}" height="${meta.height}">
+        <rect x="${meta.width - 230}" y="${meta.height - 60}" width="220" height="50"
+          fill="black" opacity="0.8" rx="8"/>
+        <text x="${meta.width - 120}" y="${meta.height - 25}"
+          text-anchor="middle" font-size="26" font-weight="bold"
+          fill="white">
+          yafrican.com
+        </text>
+      </svg>
+    `;
 
-    // SIMPLE BOTTOM RIGHT WATERMARK
-    const watermarkSvg = `<svg width="${width}" height="${height}">
-<rect x="${width-220}" y="${height-50}" width="210" height="40" fill="black" opacity="0.9" rx="5"/>
-<text x="${width-115}" y="${height-25}" text-anchor="middle" font-size="24" font-weight="bold" fill="white">yafrican.com</text>
-</svg>`;
-
-    return await sharp(inputBuffer)
-      .composite([{ input: Buffer.from(watermarkSvg) }])
+    return sharp(input)
+      .composite([{ input: Buffer.from(svg) }])
       .jpeg({ quality: 85 })
       .toBuffer();
-  } catch (error) {
-    console.error('Production watermark failed, returning original');
-    return inputBuffer;
+  } catch {
+    return input;
   }
 }

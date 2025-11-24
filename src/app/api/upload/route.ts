@@ -360,159 +360,119 @@
 // //   },
 // // }
 // api/upload/route.ts - FIXED WITH NODE RUNTIME
-export const runtime = 'nodejs'; // ⚡️ CRITICAL FIX - FORCE NODE RUNTIME
+// app/api/upload/route.ts
+export const runtime = "nodejs"; // MUST BE AT VERY TOP
 
-import { NextResponse } from 'next/server'
-import cloudinary from '@/lib/cloudinary'
-import { Readable } from 'stream'
-import { addCenteredVisibleWatermark, addProductionWatermark } from '@/lib/watermark'
+import { NextResponse } from "next/server";
+import cloudinary from "@/lib/cloudinary";
+import { Readable } from "stream";
+import {
+  addCenteredVisibleWatermark,
+  addProductionWatermark,
+} from "@/lib/watermark";
 
-// Helper function to convert Buffer to stream
-function bufferToStream(buffer: Buffer) {
-  const readable = new Readable()
-  readable.push(buffer)
-  readable.push(null)
-  return readable
+// FIXED: Proper type conversion
+function arrayBufferToBuffer(ab: ArrayBuffer): Buffer {
+  const buf = Buffer.alloc(ab.byteLength);
+  const view = new Uint8Array(ab);
+  for (let i = 0; i < buf.length; i++) {
+    buf[i] = view[i];
+  }
+  return buf;
 }
 
-// Helper function to safely convert ArrayBuffer to Buffer
-function arrayBufferToBuffer(arrayBuffer: ArrayBuffer): Buffer {
-  return Buffer.from(new Uint8Array(arrayBuffer));
+// Alternative simpler fix:
+// function arrayBufferToBuffer(ab: ArrayBuffer): Buffer {
+//   return Buffer.from(ab as ArrayBuffer);
+// }
+
+function bufferToStream(buffer: Buffer) {
+  const readable = new Readable();
+  readable.push(buffer);
+  readable.push(null);
+  return readable;
 }
 
 export async function POST(req: Request) {
   try {
-    console.log('🚀 UPLOAD: Starting upload process (NODE RUNTIME)...')
+    console.log("🚀 Upload route running on Node runtime");
 
-    const formData = await req.formData()
-    const files = formData.getAll('images') as File[]
-    const addWatermark = formData.get('addWatermark') === 'true'
+    const form = await req.formData();
+    const files = form.getAll("images") as File[];
+    const applyWM = form.get("addWatermark") === "true";
 
-    if (!files || files.length === 0) {
-      return NextResponse.json({ error: 'No files uploaded' }, { status: 400 })
+    if (!files.length) {
+      return NextResponse.json({ error: "No images" }, { status: 400 });
     }
 
-    const uploadedUrls: string[] = []
-    const fileArray = files.slice(0, 4)
+    const results: string[] = [];
 
-    console.log(`📤 Processing ${fileArray.length} files, watermark: ${addWatermark}`)
-
-    for (const [index, file] of fileArray.entries()) {
+    for (const file of files.slice(0, 4)) {
       try {
-        console.log(`\n--- Processing File ${index + 1}/${fileArray.length} ---`)
-        console.log(`📄 File: ${file.name} (${Math.round(file.size / 1024)}KB)`)
+        // FIXED: Explicit type handling
+        const arrayBuffer = await file.arrayBuffer();
+        const buf = arrayBufferToBuffer(arrayBuffer);
 
-        if (file.size > 5 * 1024 * 1024) {
-          throw new Error(`File ${file.name} is too large. Maximum size is 5MB.`)
-        }
+        let output: Buffer = buf;
 
-        const arrayBuffer = await file.arrayBuffer()
-        let buffer = arrayBufferToBuffer(arrayBuffer)
-
-        let watermarkApplied = false;
-
-        // Apply watermark if requested
-        if (addWatermark) {
-          console.log(`🎨 ADDING WATERMARK to: ${file.name}`);
-          const originalBuffer = buffer;
-          
+        if (applyWM) {
           try {
-            // Try centered watermark first
-            buffer = await addCenteredVisibleWatermark(originalBuffer);
-            watermarkApplied = true;
-            console.log(`✅ CENTERED watermark SUCCESS`);
-          } catch (error: any) {
-            console.error(`❌ Centered failed:`, error.message);
-            
-            try {
-              // Fallback to production watermark
-              buffer = await addProductionWatermark(originalBuffer);
-              watermarkApplied = true;
-              console.log(`✅ PRODUCTION watermark SUCCESS`);
-            } catch (error2: any) {
-              console.error(`❌ All watermarks failed, using original image`);
-              buffer = originalBuffer;
-              watermarkApplied = false;
-            }
+            output = await addCenteredVisibleWatermark(buf);
+            console.log("✅ Centered watermark applied");
+          } catch (err) {
+            console.log("⚠️ Centered failed, trying fallback...");
+            output = await addProductionWatermark(buf);
+            console.log("✅ Fallback watermark applied");
           }
         }
 
-        const stream = bufferToStream(buffer)
-
-        // Generate unique filename
-        const timestamp = Date.now()
-        const randomString = Math.random().toString(36).substring(2, 15)
-        const originalName = file.name.replace(/\.[^/.]+$/, "").substring(0, 20)
-        const watermarkStatus = addWatermark ? (watermarkApplied ? '_wm' : '_nowm') : ''
-        const uniqueFilename = `product_${timestamp}_${randomString}_${originalName}${watermarkStatus}`
-
-        console.log(`📤 Uploading to Cloudinary: ${uniqueFilename}`)
-
-        // Upload to Cloudinary
-        const result = await new Promise<any>((resolve, reject) => {
-          const uploadStream = cloudinary.uploader.upload_stream(
+        const upload = await new Promise<any>((resolve, reject) => {
+          cloudinary.uploader.upload_stream(
             {
-              folder: 'nextjs_products',
-              public_id: uniqueFilename,
-              use_filename: false,
-              unique_filename: true,
+              folder: "nextjs_products",
+              resource_type: "image",
               overwrite: false,
-              quality: 'auto:good',
+              unique_filename: true,
+              use_filename: false,
             },
-            (error, result) => {
-              if (error) {
-                console.error(`❌ Cloudinary upload failed:`, error)
-                reject(error)
-              } else {
-                resolve(result)
-              }
+            (err, res) => {
+              if (err) reject(err);
+              else resolve(res);
             }
-          )
-          stream.pipe(uploadStream)
-        })
+          ).end(output);
+        });
 
-        if (result.secure_url) {
-          uploadedUrls.push(result.secure_url)
-          console.log(`✅ UPLOAD SUCCESS: ${result.secure_url}`)
-          console.log(`💧 WATERMARK STATUS: ${watermarkApplied ? 'APPLIED' : 'FAILED'}`)
-        } else {
-          throw new Error('No secure_url in Cloudinary response')
+        if (upload.secure_url) {
+          results.push(upload.secure_url);
+          console.log(`✅ Uploaded: ${upload.secure_url}`);
         }
 
-      } catch (fileError: any) {
-        console.error(`❌ FILE PROCESSING FAILED: ${file.name}`, fileError.message)
-        continue
+      } catch (err) {
+        console.error("⚠ Image error:", err);
+        continue;
       }
     }
 
-    if (uploadedUrls.length === 0) {
-      throw new Error('All file uploads failed')
+    if (!results.length) {
+      return NextResponse.json(
+        { error: "All uploads failed" },
+        { status: 500 }
+      );
     }
-
-    console.log('🎉 ALL UPLOADS COMPLETED SUCCESSFULLY')
-    console.log('📋 RESULTS:', uploadedUrls)
 
     return NextResponse.json({
       success: true,
-      urls: uploadedUrls,
-      message: `Successfully uploaded ${uploadedUrls.length} file(s)`,
-      watermarked: addWatermark
-    })
-
-  } catch (error: any) {
-    console.error('💥 CRITICAL UPLOAD ERROR:', error.message)
+      count: results.length,
+      urls: results,
+      watermarked: applyWM
+    });
+  } catch (err: any) {
+    console.error("💥 Upload error:", err);
     return NextResponse.json(
-      {
-        success: false,
-        error: error.message || 'Server error during upload',
-      },
+      { error: err.message || "Server error" },
       { status: 500 }
-    )
+    );
   }
 }
 
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-}
+export const config = { api: { bodyParser: false } };
