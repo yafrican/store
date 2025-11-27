@@ -32,6 +32,7 @@ type Product = {
   stock?: number
   specifications?: Record<string, string>
     deliveryLocations?: string[] // ✅ ADD THIS
+  deliveryTime?: string // ✅ ADD THIS
 
   brand?: string
   sku?: string
@@ -54,6 +55,7 @@ type RelatedProduct = {
   stock?: number
   specifications?: Record<string, string>
     deliveryLocations?: string[] // ✅ ADD THIS
+  deliveryTime?: string // ✅ ADD THIS
 
   brand?: string
   identifier?: string // Add this
@@ -105,22 +107,22 @@ export default function ProductDetailPage() {
   const shareOnWhatsApp = (product: Product, phone: string, quantity: number, displayPrice: number) => {
     const message = `Hello! I would like to order:\n\n📦 *${product.name}*\n💰 Price: ${(displayPrice * quantity).toFixed(2)} Br\n🔢 Quantity: ${quantity}\n📞 My Phone: ${phone}\n\nPlease confirm my order. Thank you!`
     const encodedMessage = encodeURIComponent(message)
-    return `https://wa.me/251912610850?text=${encodedMessage}`
+    return `https://wa.me/251929922289?text=${encodedMessage}`
   }
 
   const shareOnTelegram = (product: Product, phone: string, quantity: number, displayPrice: number) => {
     const message = `Hello! I would like to order:\n\n📦 *${product.name}*\n💰 Price: ${(displayPrice * quantity).toFixed(2)} Br\n🔢 Quantity: ${quantity}\n📞 My Phone: ${phone}\n\nPlease confirm my order. Thank you!`
     const encodedMessage = encodeURIComponent(message)
-    return `https://t.me/YafricanStore?text=${encodedMessage}`
+    return `https://t.me/dagitf?text=${encodedMessage}`
   }
 
   // Phone call functions
   const callPhone1 = () => {
-    window.open('tel:+251912610850', '_self')
+    window.open('tel:+251929922289', '_self')
   }
 
   const callPhone2 = () => {
-    window.open('tel:+251929922289', '_self')
+    window.open('tel:+251912610850', '_self')
   }
 
   // Product conversion functions for context compatibility
@@ -140,7 +142,9 @@ useEffect(() => {
       name: product.name,
       deliveryLocations: product.deliveryLocations,
       hasDeliveryLocations: !!product.deliveryLocations,
-      deliveryLocationsLength: product.deliveryLocations?.length || 0
+      deliveryLocationsLength: product.deliveryLocations?.length || 0,
+            hasDeliveryTime: !!product.deliveryTime // ✅ ADD THIS
+
     })
   }
 }, [product])
@@ -604,7 +608,7 @@ const RelatedProductsSection = () => {
                   <button
                     key={idx}
                     onClick={() => setSelectedImage(idx)}
-                    className={`flex-shrink-0 w-16 h-16 sm:w-20 sm:h-20 border-2 rounded-lg overflow-hidden transition-all ${
+                    className={`shrink-0 w-16 h-16 sm:w-20 sm:h-20 border-2 rounded-lg overflow-hidden transition-all ${
                       selectedImage === idx 
                         ? 'border-black dark:border-white shadow-md scale-105' 
                         : 'border-gray-200 dark:border-gray-700 hover:border-gray-400'
@@ -975,77 +979,97 @@ const RelatedProductsSection = () => {
               </div>
             )}
             {/* ✅ MOVE THE DELIVERY TAB CONTENT HERE - INSIDE THE TAB CONTAINER */}
-    {activeTab === 'delivery' && (
-      <div className="space-y-6">
-        <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
-          🚚 Delivery Information
-        </h3>
-        
-        {/* Delivery Locations */}
-        {product.deliveryLocations && product.deliveryLocations.length > 0 ? (
-          <div className="space-y-4">
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Available Delivery Areas
+   {activeTab === 'delivery' && (
+  <div className="space-y-6">
+    <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-6">
+      🚚 Delivery Information
+    </h3>
+    
+    {/* Delivery Time */}
+    {product.deliveryTime && (
+      <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 bg-blue-100 dark:bg-blue-800 rounded-full flex items-center justify-center shrink-0">
+            <TruckIcon className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+          </div>
+          <div>
+            <h4 className="font-bold text-blue-900 dark:text-blue-300 text-lg mb-1">
+              Estimated Delivery Time
             </h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-              {product.deliveryLocations.map((location, index) => (
-                <div 
-                  key={index}
-                  className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl"
-                >
-                  <div className="w-8 h-8 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center">
-                    <TruckIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
-                  </div>
-                  <span className="font-medium text-green-800 dark:text-green-300">
-                    {location}
-                  </span>
-                </div>
-              ))}
-            </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              We deliver to these locations. Contact us for delivery outside these areas.
-            </p>
-          </div>
-        ) : (
-          <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-            <TruckIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-            <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-              No Delivery Information Available
-            </h4>
-            <p className="text-gray-600 dark:text-gray-400">
-              Please contact the seller for delivery options.
-            </p>
-          </div>
-        )}
-
-        {/* Additional Delivery Info */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
-            <div className="flex items-center gap-3 mb-3">
-              <TruckIcon className="w-6 h-6 text-blue-500" />
-              <h4 className="font-bold text-blue-900 dark:text-blue-300">Shipping Time</h4>
-            </div>
-            <p className="text-blue-800 dark:text-blue-200 text-sm">
-              Usually delivered within 2-5 business days after order confirmation.
-            </p>
-          </div>
-
-          <div className="bg-amber-50 dark:bg-amber-900/20 p-6 rounded-xl border border-amber-200 dark:border-amber-800">
-            <div className="flex items-center gap-3 mb-3">
-              <ShieldCheckIcon className="w-6 h-6 text-amber-500" />
-              <h4 className="font-bold text-amber-900 dark:text-amber-300">Delivery Policy</h4>
-            </div>
-            <p className="text-amber-800 dark:text-amber-200 text-sm">
-              Free shipping on orders over 500 Birr. Contact seller for exact delivery charges.
+            <p className="text-blue-800 dark:text-blue-200 text-base font-medium">
+              {product.deliveryTime}
             </p>
           </div>
         </div>
       </div>
     )}
-  </div>
-</div>
+    
+    {/* Delivery Locations */}
+    {product.deliveryLocations && product.deliveryLocations.length > 0 ? (
+      <div className="space-y-4">
+        <h4 className="text-lg font-semibold text-gray-900 dark:text-white">
+          📍 Available Delivery Areas
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {product.deliveryLocations.map((location, index) => (
+            <div 
+              key={index}
+              className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl"
+            >
+              <div className="w-8 h-8 bg-green-100 dark:bg-green-800 rounded-full flex items-center justify-center">
+                <TruckIcon className="w-4 h-4 text-green-600 dark:text-green-400" />
+              </div>
+              <span className="font-medium text-green-800 dark:text-green-300">
+                {location}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          We deliver to these locations. Contact us for delivery outside these areas.
+        </p>
+      </div>
+    ) : (
+      <div className="text-center py-8 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
+        <TruckIcon className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+        <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
+          No Delivery Information Available
+        </h4>
+        <p className="text-gray-600 dark:text-gray-400">
+          Please contact the seller for delivery options.
+        </p>
+      </div>
+    )}
 
-        
+    {/* Additional Delivery Info */}
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+      <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
+        <div className="flex items-center gap-3 mb-3">
+          <TruckIcon className="w-6 h-6 text-blue-500" />
+          <h4 className="font-bold text-blue-900 dark:text-blue-300">Shipping Policy</h4>
+        </div>
+        <p className="text-blue-800 dark:text-blue-200 text-sm">
+          Free shipping on orders over 500 Birr. Contact seller for exact delivery charges.
+        </p>
+      </div>
+
+      <div className="bg-amber-50 dark:bg-amber-900/20 p-6 rounded-xl border border-amber-200 dark:border-amber-800">
+        <div className="flex items-center gap-3 mb-3">
+          <ShieldCheckIcon className="w-6 h-6 text-amber-500" />
+          <h4 className="font-bold text-amber-900 dark:text-amber-300">Delivery Support</h4>
+        </div>
+        <p className="text-amber-800 dark:text-amber-200 text-sm">
+          Need help with delivery? Contact our support team for assistance.
+        </p>
+      </div>
+    </div>
+  </div>
+)}
+
+         </div>
+                  </div>
+
+ 
 
         {/* Related Products Section */}
         <RelatedProductsSection />

@@ -87,6 +87,7 @@ export async function GET(
       _id: product._id.toString(),
       images: processedImages,
             deliveryLocations: product.deliveryLocations || [],
+  deliveryTime: product.deliveryTime || 'Contact seller for delivery time', // ✅ ADD THIS
 
       // Ensure compatibility fields
       image: processedImages[0] || '', // For WishlistContext compatibility
@@ -98,7 +99,8 @@ export async function GET(
       imagesCount: processedProduct.images.length,
       firstImage: processedProduct.images[0]?.substring(0, 50) + '...',
       seller: processedProduct.seller?.storeName || 'No seller',
-      deliveryLocationsCount: processedProduct.deliveryLocations?.length || 0 // ✅ Add this log
+      deliveryLocationsCount: processedProduct.deliveryLocations?.length || 0 ,// ✅ Add this log
+  deliveryTime: processedProduct.deliveryTime, // ✅ ADD THIS LOG
 
     })
 

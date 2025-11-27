@@ -87,6 +87,12 @@ const ProductSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  deliveryTime: { // Add this
+    type: String,
+    required: true,
+    trim: true,
+    maxlength: 50
+  },
   // Product Details
   rating: {
     type: Number,

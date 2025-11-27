@@ -145,6 +145,7 @@ export async function GET(req: Request) {
         seller: product.seller,
         specifications: safeSpecifications,
             deliveryLocations: product.deliveryLocations || [], // ✅ ADD THIS LINE
+  deliveryTime: product.deliveryTime || "", // Add this line
 
         createdAt: product.createdAt,
         updatedAt: product.updatedAt
@@ -250,7 +251,9 @@ const validCategories = [
       inStock: stock > 0,
       stock: stock,
       specifications: safeSpecifications,
-       deliveryLocations: Array.isArray(data.deliveryLocations) ? data.deliveryLocations : [] // ✅ ADD THIS LINE
+       deliveryLocations: Array.isArray(data.deliveryLocations) ? data.deliveryLocations : [] ,// ✅ ADD THIS LINE
+  deliveryTime: data.deliveryTime || "" // ✅ Make sure this is included
+
     }
 
     console.log('📦 Creating product with validated data:', productData)
@@ -276,6 +279,8 @@ const validCategories = [
       seller: product.seller,
       specifications: createdSpecifications,
         deliveryLocations: product.deliveryLocations || [], // ✅ ADD THIS LINE
+          deliveryTime: product.deliveryTime || "", // ✅ Add this
+
       createdAt: product.createdAt,
       updatedAt: product.updatedAt
     }

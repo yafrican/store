@@ -135,6 +135,10 @@ export async function GET(
         status: product.status || 'pending',
         inStock: product.inStock,
         stock: product.stock || 0,
+            deliveryLocations: product.deliveryLocations || [], // ✅ Add this
+    
+        deliveryTime: product.deliveryTime || '', // ✅ Add this
+
         specifications: product.specifications || {},
         createdAt: product.createdAt,
         updatedAt: product.updatedAt
@@ -224,7 +228,13 @@ export async function PATCH(
       if (body.inStock === undefined) update.inStock = stockVal > 0
     }
     if (body.inStock !== undefined) update.inStock = Boolean(body.inStock)
-    
+    // ✅ Add delivery fields handling
+if (body.deliveryLocations !== undefined) {
+  update.deliveryLocations = Array.isArray(body.deliveryLocations) ? body.deliveryLocations : []
+}
+if (typeof body.deliveryTime === 'string') {
+  update.deliveryTime = body.deliveryTime.trim()
+}
     // ✅ FIX: Handle specifications update
     if (body.specifications !== undefined) {
       update.specifications = body.specifications
@@ -258,6 +268,8 @@ export async function PATCH(
         status: updated.status || 'pending',
         inStock: updated.inStock,
         stock: updated.stock || 0,
+        deliveryLocations: updated.deliveryLocations || [], // ✅ Add this
+    deliveryTime: updated.deliveryTime || '', // ✅ Add this
         specifications: updated.specifications || {},
         createdAt: updated.createdAt,
         updatedAt: updated.updatedAt

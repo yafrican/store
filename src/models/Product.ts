@@ -16,6 +16,7 @@ export interface IProduct extends Omit<Document, 'isNew'> {
   stock: number
   seller: mongoose.Types.ObjectId
     deliveryLocations: string[]
+  deliveryTime: string // Add this line
 
   // Product Details
   rating?: number
@@ -123,6 +124,12 @@ const ProductSchema = new Schema<IProduct>(
      deliveryLocations: {
       type: [String],
       default: []
+    },
+    deliveryTime: { // Add this field
+      type: String,
+      required: [true, 'Delivery time is required'],
+      trim: true,
+      maxlength: [50, 'Delivery time cannot exceed 50 characters']
     },
 //     deliveryLocations: {
 //   type: [String],
