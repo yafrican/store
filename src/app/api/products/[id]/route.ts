@@ -113,10 +113,149 @@
 //     return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 })
 //   }
 // }
+// import { NextResponse } from 'next/server'
+// import connectMongo from '@/lib/mongodb'
+// import Product from '@/models/Product'
+// import { getToken } from 'next-auth/jwt'
+
+// export async function PATCH(
+//   request: Request,
+//   { params }: { params: Promise<{ id: string }> }
+// ) {
+//   try {
+//     const { id } = await params
+    
+//     if (!id) {
+//       return NextResponse.json({ 
+//         success: false,
+//         error: 'Product ID is required' 
+//       }, { status: 400 })
+//     }
+
+//     console.log('🔄 PATCH request for product:', id)
+
+//     // Connect to MongoDB
+//     await connectMongo()
+
+//     // Verify authentication
+//     const token = await getToken({ 
+//       req: request as any,
+//       secret: process.env.NEXTAUTH_SECRET
+//     })
+
+//     if (!token || !token.id) {
+//       return NextResponse.json({ 
+//         success: false,
+//         error: 'Unauthorized' 
+//       }, { status: 401 })
+//     }
+
+//     const body = await request.json()
+//     console.log('📦 PATCH request body:', {
+//       imagesCount: body.images?.length || 0,
+//       images: body.images,
+//       name: body.name,
+//       category: body.category
+//     })
+
+//     // Build update object
+//     const updateData: any = {
+//       updatedAt: new Date()
+//     }
+
+//     // ✅ CRITICAL: Handle images array properly
+//     if (body.images !== undefined) {
+//       console.log('📸 Processing images update:', body.images)
+//       // Ensure images is always an array
+//       updateData.images = Array.isArray(body.images) ? body.images : [body.images]
+//       console.log('✅ Final images array:', updateData.images)
+//     }
+
+//     // Handle other fields
+//     const fields = [
+//       'name', 'price', 'originalPrice', 'category', 'subcategory', 
+//       'description', 'stock', 'inStock', 'specifications',
+//       'deliveryLocations', 'deliveryTime', 'freeShipping',
+//       'warrantyPeriod', 'warrantyType'
+//     ]
+
+//     fields.forEach(field => {
+//       if (body[field] !== undefined) {
+//         updateData[field] = body[field]
+//       }
+//     })
+
+//     console.log('📝 Final update data:', {
+//       images: updateData.images,
+//       imagesCount: updateData.images?.length || 0,
+//       otherFields: Object.keys(updateData).filter(key => key !== 'images')
+//     })
+
+//     // Update the product
+//     const updatedProduct = await Product.findOneAndUpdate(
+//       { 
+//         _id: id, 
+//         seller: token.id // Ensure seller owns the product
+//       },
+//       { $set: updateData },
+//       { 
+//         new: true, // Return updated document
+//         runValidators: true 
+//       }
+//     )
+
+//     if (!updatedProduct) {
+//       console.log('❌ Product not found or unauthorized')
+//       return NextResponse.json({ 
+//         success: false,
+//         error: 'Product not found or you do not have permission to edit this product' 
+//       }, { status: 404 })
+//     }
+
+//     console.log('✅ Product updated successfully:', {
+//       id: updatedProduct._id,
+//       name: updatedProduct.name,
+//       imagesCount: updatedProduct.images?.length || 0,
+//       images: updatedProduct.images
+//     })
+
+//     return NextResponse.json({
+//       success: true,
+//       product: {
+//         _id: updatedProduct._id.toString(),
+//         name: updatedProduct.name,
+//         price: updatedProduct.price,
+//         originalPrice: updatedProduct.originalPrice,
+//         category: updatedProduct.category,
+//         subcategory: updatedProduct.subcategory,
+//         description: updatedProduct.description,
+//         stock: updatedProduct.stock,
+//         inStock: updatedProduct.inStock,
+//         images: updatedProduct.images || [],
+//         specifications: updatedProduct.specifications || {},
+//         deliveryLocations: updatedProduct.deliveryLocations || [],
+//         deliveryTime: updatedProduct.deliveryTime,
+//         freeShipping: updatedProduct.freeShipping,
+//         warrantyPeriod: updatedProduct.warrantyPeriod,
+//         warrantyType: updatedProduct.warrantyType,
+//         seller: updatedProduct.seller
+//       }
+//     })
+
+//   } catch (error: any) {
+//     console.error('❌ PATCH error:', error)
+//     return NextResponse.json({ 
+//       success: false,
+//       error: error.message || 'Failed to update product' 
+//     }, { status: 500 })
+//   }
+// }
 import { NextResponse } from 'next/server'
 import connectMongo from '@/lib/mongodb'
 import Product from '@/models/Product'
-import { getToken } from 'next-auth/jwt'
+import jwt from 'jsonwebtoken'
+
+const JWT_SECRET = process.env.JWT_SECRET as string
 
 export async function PATCH(
   request: Request,
@@ -137,18 +276,34 @@ export async function PATCH(
     // Connect to MongoDB
     await connectMongo()
 
-    // Verify authentication
-    const token = await getToken({ 
-      req: request as any,
-      secret: process.env.NEXTAUTH_SECRET
-    })
-
-    if (!token || !token.id) {
+    // Verify authentication using your custom JWT
+    const tokenCookie = request.headers.get('cookie')?.match(/token=([^;]+)/)?.[1]
+    
+    if (!tokenCookie) {
       return NextResponse.json({ 
         success: false,
-        error: 'Unauthorized' 
+        error: 'Unauthorized - No token found' 
       }, { status: 401 })
     }
+
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(tokenCookie, JWT_SECRET) as { id: string; role?: string }
+    } catch (err) {
+      return NextResponse.json({ 
+        success: false,
+        error: 'Unauthorized - Invalid token' 
+      }, { status: 401 })
+    }
+
+    if (!decodedToken.id) {
+      return NextResponse.json({ 
+        success: false,
+        error: 'Unauthorized - Invalid token payload' 
+      }, { status: 401 })
+    }
+
+    const userId = decodedToken.id
 
     const body = await request.json()
     console.log('📦 PATCH request body:', {
@@ -163,7 +318,7 @@ export async function PATCH(
       updatedAt: new Date()
     }
 
-    // ✅ CRITICAL: Handle images array properly
+    // Handle images array properly
     if (body.images !== undefined) {
       console.log('📸 Processing images update:', body.images)
       // Ensure images is always an array
@@ -191,11 +346,11 @@ export async function PATCH(
       otherFields: Object.keys(updateData).filter(key => key !== 'images')
     })
 
-    // Update the product
+    // Update the product - ensure seller owns the product
     const updatedProduct = await Product.findOneAndUpdate(
       { 
         _id: id, 
-        seller: token.id // Ensure seller owns the product
+        seller: userId // Critical: Only allow owner to update
       },
       { $set: updateData },
       { 
