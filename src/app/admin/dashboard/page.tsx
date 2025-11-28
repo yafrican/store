@@ -490,7 +490,7 @@ function ProductManagementTable({
                   </div>
                 </td>
                 <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-semibold text-gray-900">${product.price || 0}</div>
+                  <div className="text-sm font-semibold text-gray-900">Birr{product.price || 0}</div>
                 </td>
                 <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap">
                   {getStatusBadge(product.status)}

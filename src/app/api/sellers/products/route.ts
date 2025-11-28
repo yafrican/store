@@ -146,7 +146,9 @@ export async function GET(req: Request) {
         specifications: safeSpecifications,
             deliveryLocations: product.deliveryLocations || [], // ✅ ADD THIS LINE
   deliveryTime: product.deliveryTime || "", // Add this line
-
+freeShipping: product.freeShipping || false,
+    warrantyPeriod: product.warrantyPeriod || '',
+    warrantyType: product.warrantyType || '',
         createdAt: product.createdAt,
         updatedAt: product.updatedAt
       }
@@ -213,6 +215,41 @@ const validCategories = [
         error: "Category is required"
       }, { status: 400 })
     }
+// ✅ FIXED: Slug generation with proper await
+    const generateSlug = (name: string) => {
+      return name
+        .toLowerCase()
+        .trim()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .substring(0, 60)
+    }
+
+    const baseSlug = generateSlug(data.name.trim())
+    let slug = baseSlug
+    let counter = 1
+
+    // ✅ FIXED: Add await here
+    while (await Product.findOne({ slug })) {
+      slug = `${baseSlug}-${counter}`
+      counter++
+    }
+
+    // If slug is empty (e.g., name contains non-Latin characters), fall back to a safe unique slug
+    if (!baseSlug || baseSlug.trim() === '') {
+      const fallback = `product-${Date.now().toString(36)}`
+      slug = fallback
+      // Ensure uniqueness
+      counter = 1
+      while (await Product.findOne({ slug })) {
+        slug = `${fallback}-${counter}`
+        counter++
+      }
+    }
+
+    console.log('🔄 Generated slug for seller product:', slug)
 
     // ✅ FIX: Validate category against allowed enum values
     const category = data.category.trim().toUpperCase()
@@ -240,6 +277,8 @@ const validCategories = [
 
     const productData = {
       name: data.name.trim(),
+        slug: slug, // ✅ ADD THIS
+
       price: parseFloat(data.price),
       originalPrice: data.originalPrice ? parseFloat(data.originalPrice) : parseFloat(data.price),
       category: category, // ✅ Use the validated category
@@ -252,8 +291,10 @@ const validCategories = [
       stock: stock,
       specifications: safeSpecifications,
        deliveryLocations: Array.isArray(data.deliveryLocations) ? data.deliveryLocations : [] ,// ✅ ADD THIS LINE
-  deliveryTime: data.deliveryTime || "" // ✅ Make sure this is included
-
+  deliveryTime: data.deliveryTime || "", // ✅ Make sure this is included
+freeShipping: data.freeShipping || false,
+  warrantyPeriod: data.warrantyPeriod || '',
+  warrantyType: data.warrantyType || ''
     }
 
     console.log('📦 Creating product with validated data:', productData)
@@ -267,6 +308,8 @@ const validCategories = [
     const formattedProduct = {
       _id: product._id,
       name: product.name,
+            slug: product.slug, // ✅ Make sure to return slug in response
+
       price: product.price,
       originalPrice: product.originalPrice,
       category: product.category,
@@ -280,7 +323,9 @@ const validCategories = [
       specifications: createdSpecifications,
         deliveryLocations: product.deliveryLocations || [], // ✅ ADD THIS LINE
           deliveryTime: product.deliveryTime || "", // ✅ Add this
-
+freeShipping: product.freeShipping || false,
+  warrantyPeriod: product.warrantyPeriod || '',
+  warrantyType: product.warrantyType || '',
       createdAt: product.createdAt,
       updatedAt: product.updatedAt
     }
@@ -315,14 +360,14 @@ const validCategories = [
     }, { status: 500 })
   }
 }
-
-// PATCH update product stock
+// PATCH update product fields
 export async function PATCH(req: Request) {
   try {
     const payload = verifyToken(req)
     await connectMongo()
 
-    const { productId, inStock, stock } = await req.json()
+    const body = await req.json()
+    const { productId, inStock, stock } = body
 
     if (!productId) {
       return NextResponse.json({
@@ -345,6 +390,7 @@ export async function PATCH(req: Request) {
 
     const updateData: any = { updatedAt: new Date() }
     
+    // ✅ EXISTING STOCK FIELDS
     if (inStock !== undefined) {
       updateData.inStock = Boolean(inStock)
     }
@@ -355,6 +401,23 @@ export async function PATCH(req: Request) {
       if (inStock === undefined) {
         updateData.inStock = stockValue > 0
       }
+    }
+
+    // ✅ ADD NEW FIELDS HANDLING
+    if (body.freeShipping !== undefined) {
+      updateData.freeShipping = Boolean(body.freeShipping)
+    }
+    if (typeof body.warrantyPeriod === 'string') {
+      updateData.warrantyPeriod = body.warrantyPeriod.trim()
+    }
+    if (typeof body.warrantyType === 'string') {
+      updateData.warrantyType = body.warrantyType.trim()
+    }
+    if (body.deliveryLocations !== undefined) {
+      updateData.deliveryLocations = Array.isArray(body.deliveryLocations) ? body.deliveryLocations : []
+    }
+    if (typeof body.deliveryTime === 'string') {
+      updateData.deliveryTime = body.deliveryTime.trim()
     }
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -374,6 +437,7 @@ export async function PATCH(req: Request) {
       ? updatedProduct.specifications 
       : {}
 
+    // ✅ UPDATE FORMATTED PRODUCT WITH NEW FIELDS
     const formattedProduct = {
       _id: updatedProduct._id,
       name: updatedProduct.name,
@@ -388,6 +452,12 @@ export async function PATCH(req: Request) {
       stock: updatedProduct.stock,
       seller: updatedProduct.seller,
       specifications: safeSpecifications,
+      // ✅ ADD NEW FIELDS TO RESPONSE
+      deliveryLocations: updatedProduct.deliveryLocations || [],
+      deliveryTime: updatedProduct.deliveryTime || "",
+      freeShipping: updatedProduct.freeShipping || false,
+      warrantyPeriod: updatedProduct.warrantyPeriod || '',
+      warrantyType: updatedProduct.warrantyType || '',
       createdAt: updatedProduct.createdAt,
       updatedAt: updatedProduct.updatedAt
     }
@@ -406,6 +476,96 @@ export async function PATCH(req: Request) {
     }, { status: 500 })
   }
 }
+// // PATCH update product stock
+// export async function PATCH(req: Request) {
+//   try {
+//     const payload = verifyToken(req)
+//     await connectMongo()
+
+//     const { productId, inStock, stock } = await req.json()
+
+//     if (!productId) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Product ID is required"
+//       }, { status: 400 })
+//     }
+
+//     const product = await Product.findOne({ 
+//       _id: productId, 
+//       seller: payload.id 
+//     })
+
+//     if (!product) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Product not found or access denied"
+//       }, { status: 404 })
+//     }
+
+//     const updateData: any = { updatedAt: new Date() }
+    
+//     if (inStock !== undefined) {
+//       updateData.inStock = Boolean(inStock)
+//     }
+    
+//     if (stock !== undefined) {
+//       const stockValue = parseInt(stock)
+//       updateData.stock = stockValue
+//       if (inStock === undefined) {
+//         updateData.inStock = stockValue > 0
+//       }
+//     }
+
+//     const updatedProduct = await Product.findByIdAndUpdate(
+//       productId,
+//       updateData,
+//       { new: true, runValidators: true }
+//     )
+
+//     if (!updatedProduct) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Failed to update product"
+//       }, { status: 500 })
+//     }
+
+//     const safeSpecifications = updatedProduct.specifications && typeof updatedProduct.specifications === 'object' 
+//       ? updatedProduct.specifications 
+//       : {}
+
+//     const formattedProduct = {
+//       _id: updatedProduct._id,
+//       name: updatedProduct.name,
+//       price: updatedProduct.price,
+//       originalPrice: updatedProduct.originalPrice,
+//       category: updatedProduct.category.toUpperCase(),
+//       subcategory: updatedProduct.subcategory,
+//       images: updatedProduct.images,
+//       description: updatedProduct.description,
+//       status: updatedProduct.status,
+//       inStock: updatedProduct.inStock,
+//       stock: updatedProduct.stock,
+//       seller: updatedProduct.seller,
+//       specifications: safeSpecifications,
+//       createdAt: updatedProduct.createdAt,
+//       updatedAt: updatedProduct.updatedAt
+//     }
+
+//     return NextResponse.json({
+//       success: true,
+//       product: formattedProduct,
+//       message: "Product updated successfully"
+//     })
+
+//   } catch (error: any) {
+//     console.error("❌ Product update error:", error)
+//     return NextResponse.json({
+//       success: false,
+//       error: error.message || "Internal server error"
+//     }, { status: 500 })
+//   }
+// }
 
 // DELETE product
 export async function DELETE(req: Request) {

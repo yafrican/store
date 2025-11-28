@@ -23,7 +23,9 @@ interface ProductFormData {
   }
     deliveryLocations: string[] // Add this
      deliveryTime: string // Add this line
-
+freeShipping: boolean
+  warrantyPeriod: string
+  warrantyType: string
 }
 
 // CORRECT mapping - matches MongoDB schema
@@ -96,7 +98,9 @@ export default function CreateProductPage() {
     images: [],
     deliveryLocations: [], // Add this - empty array initially
       deliveryTime: '', // Add this - empty string initially
-
+freeShipping: false,
+  warrantyPeriod: '',
+  warrantyType: '',
     specifications: {}
   })
 
@@ -292,12 +296,15 @@ export default function CreateProductPage() {
   }
 
   // Calculate final price with 10% markup
-  const calculateFinalPrice = (basePrice: string): string => {
-    if (!basePrice || isNaN(parseFloat(basePrice))) return ''
-    const price = parseFloat(basePrice)
-    const finalPrice = price + (price * 0.10)
-    return finalPrice.toFixed(2)
-  }
+ const calculateFinalPrice = (basePrice: string): string => {
+  if (!basePrice || isNaN(parseFloat(basePrice))) return ''
+  const price = parseFloat(basePrice)
+  const finalPrice = price + (price * 0.10)
+  
+  // Round to nearest 5 Birr - 1449=1450, 1446=1445
+  const roundedPrice = Math.round(finalPrice / 5) * 5
+  return roundedPrice.toFixed(0) // Remove decimals since we're rounding to whole numbers
+}
 
   // Handle price input changes
   const handlePriceChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -534,8 +541,10 @@ export default function CreateProductPage() {
         status: 'pending',
         specifications: formData.specifications,
           deliveryLocations: formData.deliveryLocations, // Add this line
-            deliveryTime: formData.deliveryTime.trim() // Add this line
-
+            deliveryTime: formData.deliveryTime.trim(), // Add this line
+ freeShipping: formData.freeShipping,
+  warrantyPeriod: formData.warrantyPeriod,
+  warrantyType: formData.warrantyType.trim()
 
       }
 
@@ -593,13 +602,30 @@ export default function CreateProductPage() {
   }
 
   // Calculate profit and markup
-  const profit = formData.originalPrice && formData.price 
-    ? (parseFloat(formData.price) - parseFloat(formData.originalPrice)).toFixed(2)
-    : '0.00'
+  // Calculate profit and markup with accurate platform fee
+const platformFee = formData.originalPrice 
+  ? (parseFloat(formData.originalPrice) * 0.10).toFixed(0)
+  : '0'
 
-  const markupPercentage = formData.originalPrice && parseFloat(formData.originalPrice) > 0
-    ? ((parseFloat(formData.price) - parseFloat(formData.originalPrice)) / parseFloat(formData.originalPrice) * 100).toFixed(1)
-    : '0.0'
+const profit = platformFee
+
+const markupPercentage = formData.originalPrice && parseFloat(formData.originalPrice) > 0
+  ? ((parseFloat(formData.price) - parseFloat(formData.originalPrice)) / parseFloat(formData.originalPrice) * 100).toFixed(1)
+  : '0.0'
+// Calculate profit and markup with accurate rounding
+// const actualPlatformFee = formData.originalPrice 
+//   ? (parseFloat(formData.originalPrice) * 0.10).toFixed(0)
+//   : '0'
+
+// const actualProfit = formData.originalPrice && formData.price 
+//   ? (parseFloat(formData.price) - parseFloat(formData.originalPrice)).toFixed(0)
+//   : '0'
+
+// const profit = actualProfit
+
+// const markupPercentage = formData.originalPrice && parseFloat(formData.originalPrice) > 0
+//   ? ((parseFloat(formData.price) - parseFloat(formData.originalPrice)) / parseFloat(formData.originalPrice) * 100).toFixed(1)
+//   : '0.0'
 
   // Render current step content
   const renderStepContent = () => {
@@ -648,23 +674,24 @@ export default function CreateProductPage() {
                   </div>
 
                   {/* Final Price Display */}
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-blue-900">Final Selling Price:</span>
-                      <Calculator className="w-4 h-4 text-blue-600" />
-                    </div>
-                    <div className="text-2xl font-bold text-blue-700">
-                      Birr{formData.price || '0.00'}
-                    </div>
-                    <div className="text-xs text-blue-600 mt-1">
-                      Includes 10% platform fee (Birr{profit} profit)
-                    </div>
-                    {formData.originalPrice && (
-                      <div className="text-xs text-green-600 mt-1">
-                        Markup: {markupPercentage}%
-                      </div>
-                    )}
-                  </div>
+{/* Final Price Display */}
+<div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+  <div className="flex items-center justify-between mb-2">
+    <span className="text-sm font-medium text-blue-900">Final Selling Price:</span>
+    <Calculator className="w-4 h-4 text-blue-600" />
+  </div>
+  <div className="text-2xl font-bold text-blue-700">
+    Birr{formData.price || '0'}
+  </div>
+  <div className="text-xs text-blue-600 mt-1">
+    Includes 10% platform fee (Birr{profit} profit)
+  </div>
+  {formData.originalPrice && (
+    <div className="text-xs text-green-600 mt-1">
+      Markup: {markupPercentage}%
+    </div>
+  )}
+</div>
                 </div>
 
                 <div>
@@ -834,6 +861,76 @@ export default function CreateProductPage() {
           Enter your estimated delivery time (e.g., "2-3 days", "1 week", "3-5 business days")
         </p>
       </div>
+      {/* ✅ ADD FREE SHIPPING & WARRANTY FIELDS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Free Shipping Toggle */}
+        <div className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
+          <div className="flex items-center">
+            <input
+              type="checkbox"
+              id="freeShipping"
+              name="freeShipping"
+              checked={formData.freeShipping}
+              onChange={(e) => setFormData(prev => ({
+                ...prev,
+                freeShipping: e.target.checked
+              }))}
+              className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+            />
+            <label htmlFor="freeShipping" className="ml-2 text-sm font-medium text-gray-900">
+              Free Shipping
+            </label>
+          </div>
+          <div className="text-sm text-gray-500">
+            Offer free shipping to customers
+          </div>
+        </div>
+
+        {/* Warranty Period */}
+        <div>
+          <label htmlFor="warrantyPeriod" className="block text-sm font-medium text-gray-700 mb-2">
+            Warranty Period
+          </label>
+          <select
+            id="warrantyPeriod"
+            name="warrantyPeriod"
+            value={formData.warrantyPeriod}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">No warranty</option>
+            <option value="1">1 month</option>
+            <option value="3">3 months</option>
+            <option value="6">6 months</option>
+            <option value="12">1 year</option>
+            <option value="24">2 years</option>
+            <option value="36">3 years</option>
+            <option value="lifetime">Lifetime</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Warranty Type Description */}
+      {formData.warrantyPeriod && formData.warrantyPeriod !== '' && (
+        <div>
+          <label htmlFor="warrantyType" className="block text-sm font-medium text-gray-700 mb-2">
+            Warranty Type / Details
+          </label>
+          <input
+            type="text"
+            id="warrantyType"
+            name="warrantyType"
+            value={formData.warrantyType}
+            onChange={handleInputChange}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            placeholder="e.g., Manufacturer warranty, Seller warranty, Limited warranty..."
+          />
+          <p className="text-sm text-gray-500 mt-1">
+            Describe the type of warranty coverage
+          </p>
+        </div>
+      )}
+      
     </div>
   )
         
@@ -1016,8 +1113,8 @@ export default function CreateProductPage() {
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                   <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
                     <div className="text-gray-600 mb-1">Your Price</div>
-                    <div className="text-2xl font-bold text-gray-900">Birr{parseFloat(formData.originalPrice).toFixed(2)}</div>
-                  </div>
+ <div className="text-2xl font-bold text-gray-900">Birr{parseFloat(formData.originalPrice).toFixed(0)}</div>
+                   </div>
                   <div className="text-center p-4 bg-white rounded-lg border border-gray-200">
                     <div className="text-gray-600 mb-1">Platform Fee (10%)</div>
                     <div className="text-2xl font-bold text-yellow-600">Birr{profit}</div>

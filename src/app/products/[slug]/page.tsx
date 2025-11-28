@@ -13,6 +13,8 @@ import {
   TruckIcon,
   ShieldCheckIcon,
   ArrowLeftIcon,
+    XMarkIcon, // ← ADD THIS LINE
+
 } from '@heroicons/react/24/outline'
 import { HeartIcon as HeartSolidIcon } from '@heroicons/react/24/solid'
 import { useCart } from '../../contexts/CartContext'
@@ -37,7 +39,9 @@ type Product = {
   brand?: string
   sku?: string
   image?: string
-  freeShipping?: boolean
+freeShipping?: boolean
+  warrantyPeriod?: string
+  warrantyType?: string
   discountPercentage?: number
 }
 
@@ -79,6 +83,7 @@ export default function ProductDetailPage() {
   const [phone, setPhone] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [activeTab, setActiveTab] = useState('description')
+const [showOrderModal, setShowOrderModal] = useState(false) // ← ADD THIS LINE
 
   const isInWishlist = product ? checkWishlist(product._id) : false
   const isProductInCart = (productId: string) => cartItems.some(item => item.id === productId)
@@ -103,18 +108,20 @@ export default function ProductDetailPage() {
     return product.salePrice || product.price
   }
 
-  // WhatsApp and Telegram utility functions
-  const shareOnWhatsApp = (product: Product, phone: string, quantity: number, displayPrice: number) => {
-    const message = `Hello! I would like to order:\n\n📦 *${product.name}*\n💰 Price: ${(displayPrice * quantity).toFixed(2)} Br\n🔢 Quantity: ${quantity}\n📞 My Phone: ${phone}\n\nPlease confirm my order. Thank you!`
-    const encodedMessage = encodeURIComponent(message)
-    return `https://wa.me/251929922289?text=${encodedMessage}`
-  }
+// WhatsApp and Telegram utility functions with product link
+const shareOnWhatsApp = (product: Product, phone: string, quantity: number, displayPrice: number) => {
+  const productUrl = `https://www.yafrican.com/products/${product.slug}`
+  const message = `Hello! I would like to order:\n\n *${product.name}*\n Price: ${(displayPrice * quantity).toFixed(2)} Br\n Quantity: ${quantity}\n📞 My Phone: ${phone}\n🔗 Product Link: ${productUrl}\n\nPlease confirm my order. Thank you!`
+  const encodedMessage = encodeURIComponent(message)
+  return `https://wa.me/251929922289?text=${encodedMessage}`
+}
 
-  const shareOnTelegram = (product: Product, phone: string, quantity: number, displayPrice: number) => {
-    const message = `Hello! I would like to order:\n\n📦 *${product.name}*\n💰 Price: ${(displayPrice * quantity).toFixed(2)} Br\n🔢 Quantity: ${quantity}\n📞 My Phone: ${phone}\n\nPlease confirm my order. Thank you!`
-    const encodedMessage = encodeURIComponent(message)
-    return `https://t.me/dagitf?text=${encodedMessage}`
-  }
+const shareOnTelegram = (product: Product, phone: string, quantity: number, displayPrice: number) => {
+  const productUrl = `https://www.yafrican.com/products/${product.slug}`
+  const message = `Hello! I would like to order:\n\n *${product.name}*\n Price: ${(displayPrice * quantity).toFixed(2)} Br\n Quantity: ${quantity}\n📞 My Phone: ${phone}\n🔗 Product Link: ${productUrl}\n\nPlease confirm my order. Thank you!`
+  const encodedMessage = encodeURIComponent(message)
+  return `https://t.me/dagitf?text=${encodedMessage}`
+}
 
   // Phone call functions
   const callPhone1 = () => {
@@ -509,7 +516,186 @@ const RelatedProductsSection = () => {
     </div>
   )
 }
+// Order Modal Component
+const OrderModal = ({ 
+  isOpen, 
+  onClose, 
+  product, 
+  quantity, 
+  displayPrice 
+}: {
+  isOpen: boolean
+  onClose: () => void
+  product: Product
+  quantity: number
+  displayPrice: number
+}) => {
+  const [phone, setPhone] = useState('')
+  const [selectedPlatform, setSelectedPlatform] = useState<'whatsapp' | 'telegram' | null>(null)
 
+  // Generate product URL
+  const productUrl = `https://www.yafrican.com/products/${product.slug}`
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!phone.trim()) {
+      toast.warning('Please enter your phone number')
+      return
+    }
+
+    if (!selectedPlatform) {
+      toast.warning('Please select a messaging platform')
+      return
+    }
+
+    // Enhanced message with product link
+    const message = `Hello! I would like to order:\n\n *${product.name}*\n Price: ${(displayPrice * quantity).toFixed(2)} Br\n Quantity: ${quantity}\n📞 My Phone: ${phone}\n🔗 Product Link: ${productUrl}\n\nPlease confirm my order. Thank you!`
+
+    const encodedMessage = encodeURIComponent(message)
+
+    if (selectedPlatform === 'whatsapp') {
+      window.open(`https://wa.me/251929922289?text=${encodedMessage}`, '_blank')
+    } else if (selectedPlatform === 'telegram') {
+      window.open(`https://t.me/dagitf?text=${encodedMessage}`, '_blank')
+    }
+    
+    onClose()
+    setPhone('')
+    setSelectedPlatform(null)
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl max-w-md w-full p-6">
+        {/* Header */}
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-xl font-bold text-gray-900 dark:text-white">
+            Order via Message
+          </h3>
+          <button
+            onClick={onClose}
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+          >
+            <XMarkIcon className="w-5 h-5 text-gray-500" />
+          </button>
+        </div>
+
+        {/* Product Info */}
+        <div className="bg-gray-50 dark:bg-gray-700 rounded-lg p-4 mb-4">
+          <h4 className="font-semibold text-gray-900 dark:text-white mb-2">
+            {product.name}
+          </h4>
+          <div className="flex justify-between text-sm text-gray-600 dark:text-gray-400">
+            <span>Quantity: {quantity}</span>
+            <span>Total: {(displayPrice * quantity).toFixed(2)} Br</span>
+          </div>
+          <div className="mt-2 text-xs text-blue-600 dark:text-blue-400 break-all">
+            🔗 {productUrl}
+          </div>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Phone Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Your Phone Number *
+            </label>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder="Enter your phone number"
+              required
+              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent text-base bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            />
+          </div>
+
+          {/* Platform Selection */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Choose Platform *
+            </label>
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() => setSelectedPlatform('whatsapp')}
+                className={`p-4 border-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 ${
+                  selectedPlatform === 'whatsapp'
+                    ? 'border-green-500 bg-green-50 dark:bg-green-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                }`}
+              >
+                <ChatBubbleLeftRightIcon className="w-5 h-5 text-green-500" />
+                <span className="font-medium">WhatsApp</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedPlatform('telegram')}
+                className={`p-4 border-2 rounded-lg transition-all duration-200 flex items-center justify-center gap-2 ${
+                  selectedPlatform === 'telegram'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
+                    : 'border-gray-300 dark:border-gray-600 hover:border-gray-400'
+                }`}
+              >
+                <PaperAirplaneIcon className="w-5 h-5 text-blue-500" />
+                <span className="font-medium">Telegram</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Selected Platform Indicator */}
+          {selectedPlatform && (
+            <div className={`p-3 rounded-lg text-center ${
+              selectedPlatform === 'whatsapp' 
+                ? 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-300' 
+                : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300'
+            }`}>
+              <div className="flex items-center justify-center gap-2">
+                {selectedPlatform === 'whatsapp' ? (
+                  <>
+                    <ChatBubbleLeftRightIcon className="w-4 h-4" />
+                    <span className="font-medium">Ready to send via WhatsApp</span>
+                  </>
+                ) : (
+                  <>
+                    <PaperAirplaneIcon className="w-4 h-4" />
+                    <span className="font-medium">Ready to send via Telegram</span>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-3 pt-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={!phone.trim() || !selectedPlatform}
+              className="flex-1 px-4 py-3 bg-amber-400 hover:bg-amber-500 disabled:bg-gray-300 disabled:cursor-not-allowed text-black rounded-lg font-semibold transition-colors"
+            >
+              Send Message
+            </button>
+          </div>
+        </form>
+
+        {/* Info Text */}
+        <div className="mt-4 text-xs text-gray-500 dark:text-gray-400 text-center">
+          You'll be redirected to {selectedPlatform || 'the selected platform'} to complete your order
+        </div>
+      </div>
+    </div>
+  )
+}
   if (loading) {
     return (
       <div className="min-h-screen bg-white dark:bg-gray-900 py-8">
@@ -654,11 +840,18 @@ const RelatedProductsSection = () => {
                     -{discountPercent}% OFF
                   </span>
                 )}
-                {product.freeShipping && (
-                  <span className="bg-blue-500 text-white text-xs px-3 py-1 rounded-full font-semibold">
-                    FREE SHIPPING
-                  </span>
-                )}
+                 {/* ✅ DYNAMIC FREE SHIPPING BADGE */}
+  {product.freeShipping && (
+    <span className="bg-blue-500 text-white text-xs px-3 py-1 rounded-full font-semibold">
+      🚚 FREE SHIPPING
+    </span>
+  )}
+  {/* ✅ DYNAMIC WARRANTY BADGE */}
+  {product.warrantyPeriod && product.warrantyPeriod !== '' && (
+    <span className="bg-purple-500 text-white text-xs px-3 py-1 rounded-full font-semibold">
+      🛡️ {product.warrantyPeriod} {product.warrantyPeriod === 'lifetime' ? '' : product.warrantyPeriod === '1' ? 'month' : 'months'} warranty
+    </span>
+  )}
                 {isOutOfStock && (
                   <span className="bg-gray-500 text-white text-xs px-3 py-1 rounded-full font-semibold">
                     OUT OF STOCK
@@ -798,21 +991,31 @@ const RelatedProductsSection = () => {
             {/* Features */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6 border-t border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
-                <TruckIcon className="w-5 h-5 text-green-500" />
-                <div>
-                  <div className="font-medium">Free Shipping</div>
-                  <div className="text-sm">Over 500 Br</div>
-                </div>
-              </div>
+    <TruckIcon className="w-5 h-5 text-green-500" />
+    <div>
+      <div className="font-medium">
+        {product.freeShipping ? 'Free Shipping' : 'Shipping Available'}
+      </div>
+      <div className="text-sm">
+        {product.freeShipping ? 'Free delivery' : 'Contact for shipping'}
+      </div>
+    </div>
+  </div>
               <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
-                <ShieldCheckIcon className="w-5 h-5 text-blue-500" />
-                <div>
-                  <div className="font-medium">Warranty</div>
-                  <div className="text-sm">2 Years</div>
-                </div>
-              </div>
-            </div>
-
+    <ShieldCheckIcon className="w-5 h-5 text-blue-500" />
+    <div>
+      <div className="font-medium">
+        {product.warrantyPeriod ? 'Warranty' : 'No Warranty'}
+      </div>
+      <div className="text-sm">
+        {product.warrantyPeriod ? 
+          `${product.warrantyPeriod} ${product.warrantyPeriod === 'lifetime' ? 'warranty' : product.warrantyPeriod === '1' ? 'month' : 'months'}` 
+          : 'No warranty included'
+        }
+      </div>
+    </div>
+  </div>
+</div>
             {/* Contact Methods */}
             <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
               <h3 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white mb-4">
@@ -836,36 +1039,23 @@ const RelatedProductsSection = () => {
                   <span className="text-sm sm:text-base">Call Us</span>
                 </button>
               </div>
-
-              {/* Messaging Apps - Side by Side */}
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <button
-                  onClick={() => {
-                    if (!phone) {
-                      handlePhoneRequired()
-                      return
-                    }
-                    window.open(shareOnTelegram(product, phone, quantity, displayPrice), '_blank')
-                  }}
-                  className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white p-3 sm:p-4 rounded-lg transition-all duration-200 font-semibold shadow-sm hover:shadow-md"
-                >
-                  <PaperAirplaneIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="text-sm sm:text-base">Telegram</span>
-                </button>
-                <button
-                  onClick={() => {
-                    if (!phone) {
-                      handlePhoneRequired()
-                      return
-                    }
-                    window.open(shareOnWhatsApp(product, phone, quantity, displayPrice), '_blank')
-                  }}
-                  className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white p-3 sm:p-4 rounded-lg transition-all duration-200 font-semibold shadow-sm hover:shadow-md"
-                >
-                  <ChatBubbleLeftRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
-                  <span className="text-sm sm:text-base">WhatsApp</span>
-                </button>
-              </div>
+{/* Messaging Apps - Side by Side */}
+<div className="grid grid-cols-2 gap-3 mb-4">
+  <button
+    onClick={() => setShowOrderModal(true)}
+    className="flex items-center justify-center gap-2 bg-blue-500 hover:bg-blue-600 text-white p-3 sm:p-4 rounded-lg transition-all duration-200 font-semibold shadow-sm hover:shadow-md"
+  >
+    <PaperAirplaneIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+    <span className="text-sm sm:text-base">Telegram</span>
+  </button>
+  <button
+    onClick={() => setShowOrderModal(true)}
+    className="flex items-center justify-center gap-2 bg-green-500 hover:bg-green-600 text-white p-3 sm:p-4 rounded-lg transition-all duration-200 font-semibold shadow-sm hover:shadow-md"
+  >
+    <ChatBubbleLeftRightIcon className="w-4 h-4 sm:w-5 sm:h-5" />
+    <span className="text-sm sm:text-base">WhatsApp</span>
+  </button>
+</div>
 
               {/* Phone Order Form */}
               <form
@@ -1044,13 +1234,17 @@ const RelatedProductsSection = () => {
     {/* Additional Delivery Info */}
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
       <div className="bg-blue-50 dark:bg-blue-900/20 p-6 rounded-xl border border-blue-200 dark:border-blue-800">
-        <div className="flex items-center gap-3 mb-3">
-          <TruckIcon className="w-6 h-6 text-blue-500" />
-          <h4 className="font-bold text-blue-900 dark:text-blue-300">Shipping Policy</h4>
-        </div>
-        <p className="text-blue-800 dark:text-blue-200 text-sm">
-          Free shipping on orders over 500 Birr. Contact seller for exact delivery charges.
-        </p>
+        <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400">
+    <TruckIcon className="w-5 h-5 text-green-500" />
+    <div>
+      <div className="font-medium">
+        {product.freeShipping ? 'Free Shipping' : 'Shipping Available'}
+      </div>
+      <div className="text-sm">
+        {product.freeShipping ? 'Free delivery' : 'Contact for shipping'}
+      </div>
+    </div>
+  </div>
       </div>
 
       <div className="bg-amber-50 dark:bg-amber-900/20 p-6 rounded-xl border border-amber-200 dark:border-amber-800">
@@ -1073,7 +1267,16 @@ const RelatedProductsSection = () => {
 
         {/* Related Products Section */}
         <RelatedProductsSection />
+         {/* Order Modal */}
+        <OrderModal
+          isOpen={showOrderModal}
+          onClose={() => setShowOrderModal(false)}
+          product={product}
+          quantity={quantity}
+          displayPrice={displayPrice}
+        />
       </div>
     </div>
   )
 }
+     

@@ -138,7 +138,9 @@ export async function GET(
             deliveryLocations: product.deliveryLocations || [], // ✅ Add this
     
         deliveryTime: product.deliveryTime || '', // ✅ Add this
-
+freeShipping: product.freeShipping || false,
+        warrantyPeriod: product.warrantyPeriod || '',
+        warrantyType: product.warrantyType || '',
         specifications: product.specifications || {},
         createdAt: product.createdAt,
         updatedAt: product.updatedAt
@@ -235,6 +237,16 @@ if (body.deliveryLocations !== undefined) {
 if (typeof body.deliveryTime === 'string') {
   update.deliveryTime = body.deliveryTime.trim()
 }
+// ✅ ADD FREE SHIPPING & WARRANTY FIELDS HANDLING
+    if (body.freeShipping !== undefined) {
+      update.freeShipping = Boolean(body.freeShipping)
+    }
+    if (typeof body.warrantyPeriod === 'string') {
+      update.warrantyPeriod = body.warrantyPeriod.trim()
+    }
+    if (typeof body.warrantyType === 'string') {
+      update.warrantyType = body.warrantyType.trim()
+    }
     // ✅ FIX: Handle specifications update
     if (body.specifications !== undefined) {
       update.specifications = body.specifications
@@ -270,6 +282,9 @@ if (typeof body.deliveryTime === 'string') {
         stock: updated.stock || 0,
         deliveryLocations: updated.deliveryLocations || [], // ✅ Add this
     deliveryTime: updated.deliveryTime || '', // ✅ Add this
+    freeShipping: updated.freeShipping || false,
+        warrantyPeriod: updated.warrantyPeriod || '',
+        warrantyType: updated.warrantyType || '',
         specifications: updated.specifications || {},
         createdAt: updated.createdAt,
         updatedAt: updated.updatedAt

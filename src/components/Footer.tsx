@@ -13,7 +13,11 @@ import {
   CreditCardIcon,
   ArrowRightIcon
 } from '@heroicons/react/24/outline'
-
+declare global {
+  interface Window {
+    chatbase: any
+  }
+}
 export default function Footer() {
   const currentYear = new Date().getFullYear()
   const [isDesktop, setIsDesktop] = useState(false)
@@ -35,6 +39,47 @@ export default function Footer() {
     }
   }, [isMounted])
 
+  // --- Chatbase Script Injection ---
+  useEffect(() => {
+    // Load Chatbase widget
+    const onLoad = () => {
+      if (!window.chatbase || window.chatbase("getState") !== "initialized") {
+        window.chatbase = (...args: any[]) => {
+          if (!window.chatbase.q) window.chatbase.q = []
+          window.chatbase.q.push(args)
+        }
+        window.chatbase = new Proxy(window.chatbase, {
+          get(target, prop) {
+            if (prop === "q") return target.q
+            return (...args: any[]) => target(prop, ...args)
+          }
+        })
+      }
+
+      const script = document.createElement("script")
+      script.src = "https://www.chatbase.co/embed.min.js"
+      script.id = "mq67KHt-zS6L34C1UpGem"
+      script.async = true
+      document.body.appendChild(script)
+
+      // Optional: Identify user if JWT endpoint exists
+      fetch('/api/chatbase-token') // your server endpoint returning { token }
+        .then(res => res.json())
+        .then(data => {
+          if (data.token) {
+            window.chatbase('identify', { token: data.token })
+          }
+        })
+        .catch(console.error)
+    }
+
+    if (document.readyState === "complete") onLoad()
+    else window.addEventListener("load", onLoad)
+
+    return () => window.removeEventListener("load", onLoad)
+  }, [])
+
+ 
   // Don't render footer on mobile
   if (!isDesktop) {
     return null
@@ -68,7 +113,7 @@ export default function Footer() {
               {[
                 {
                   name: 'Facebook',
-                  href: '#',
+                  href: 'https://facebook.com/yafricanstore',
                   icon: (
                     <svg className="w-4 h-4 lg:w-5 lg:h-5 text-gray-400 group-hover:text-gray-900" fill="currentColor" viewBox="0 0 24 24">
                       <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -182,29 +227,41 @@ export default function Footer() {
             </h3>
             <div className="space-y-3" role="list" aria-label="Contact information">
               <div className="flex items-start gap-2">
-                <MapPinIcon className="w-4 h-4 text-yellow-500 mt-0.5 flex-shrink-0" aria-hidden="true" />
+                <MapPinIcon className="w-4 h-4 text-yellow-500 mt-0.5 shrink-0" aria-hidden="true" />
                 <div>
                   <p className="text-gray-300 font-medium text-xs lg:text-sm">Address</p>
                   <p className="text-gray-400 text-xs">1000 Addis Ababa, Ethiopia</p>
                 </div>
               </div>
               
-              <div className="flex items-center gap-2">
-                <PhoneIcon className="w-4 h-4 text-yellow-500 flex-shrink-0" aria-hidden="true" />
-                <div>
-                  <p className="text-gray-300 font-medium text-xs lg:text-sm">Phone</p>
-                  <a 
-                    href="tel:+251911455768" 
-                    className="text-gray-400 text-xs hover:text-yellow-400 transition-colors duration-200"
-                    aria-label="Call us at +251 911 45 57 68"
-                  >
-                    +251 911 45 57 68
-                  </a>
-                </div>
-              </div>
+      <div className="flex items-center gap-3">
+  <PhoneIcon className="w-4 h-4 text-yellow-500 shrink-0" aria-hidden="true" />
+  <div className="flex items-center gap-4">
+    <div>
+      <p className="text-gray-300 font-medium text-xs lg:text-sm mb-1">Phone</p>
+      <div className="flex items-center gap-3">
+        <a 
+          href="tel:+251929922289" 
+          className="text-gray-400 text-xs hover:text-yellow-400 transition-colors duration-200"
+          aria-label="Call us at +251 929 92 22 89"
+        >
+          +251 929 92 22 89
+        </a>
+        <span className="text-gray-500">•</span>
+        <a 
+          href="tel:+251912610850" 
+          className="text-gray-400 text-xs hover:text-yellow-400 transition-colors duration-200"
+          aria-label="Call us at +251 912 61 08 50"
+        >
+          +251 912 61 08 50
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
               
               <div className="flex items-center gap-2">
-                <EnvelopeIcon className="w-4 h-4 text-yellow-500 flex-shrink-0" aria-hidden="true" />
+                <EnvelopeIcon className="w-4 h-4 text-yellow-500 shrink-0" aria-hidden="true" />
                 <div>
                   <p className="text-gray-300 font-medium text-xs lg:text-sm">Email</p>
                   <a 
@@ -212,13 +269,12 @@ export default function Footer() {
                     className="text-gray-400 text-xs hover:text-yellow-400 transition-colors duration-200"
                     aria-label="Email us at support@yafrican.com"
                   >
-                    support@yafrican.com
-                  </a>
+                 support@yafrican.com                  </a>
                 </div>
               </div>
               
               <div className="flex items-center gap-2">
-                <GlobeAltIcon className="w-4 h-4 text-yellow-500 flex-shrink-0" aria-hidden="true" />
+                <GlobeAltIcon className="w-4 h-4 text-yellow-500 shrink-0" aria-hidden="true" />
                 <div>
                   <p className="text-gray-300 font-medium text-xs lg:text-sm">Live Chat</p>
                   <p className="text-gray-400 text-xs">Available 24/7</p>
@@ -235,7 +291,7 @@ export default function Footer() {
               {
                 icon: <TruckIcon className="w-5 h-5 lg:w-6 lg:h-6 text-yellow-500" aria-hidden="true" />,
                 title: 'Free Shipping',
-                description: 'On orders over $50'
+                description: 'On orders over Birr5000'
               },
               {
                 icon: <ShieldCheckIcon className="w-5 h-5 lg:w-6 lg:h-6 text-yellow-500" aria-hidden="true" />,

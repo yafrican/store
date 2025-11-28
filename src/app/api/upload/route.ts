@@ -364,6 +364,7 @@ export const runtime = "nodejs"; // MUST BE AT VERY TOP
 
 import { NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
+import { Readable } from 'stream'
 
 export async function POST(req: Request) {
   try {
@@ -379,54 +380,135 @@ export async function POST(req: Request) {
 
     const results: string[] = [];
 
+    // Helper: convert Buffer to Readable stream
+    function bufferToStream(buffer: Buffer) {
+      const readable = new Readable()
+      readable.push(buffer)
+      readable.push(null)
+      return readable
+    }
+
     for (const file of files.slice(0, 4)) {
       try {
-        const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-        const base64Image = buffer.toString('base64');
-        const dataUri = `data:${file.type};base64,${base64Image}`;
+        const arrayBuffer = await file.arrayBuffer()
+        const buffer = Buffer.from(arrayBuffer)
 
-        // Cloudinary upload options
         const uploadOptions: any = {
-          folder: "nextjs_products",
-          resource_type: "image",
+          folder: 'nextjs_products',
+          resource_type: 'image',
           overwrite: false,
           unique_filename: true,
-          use_filename: false,
-        };
+          use_filename: false
+        }
 
-        // ADD CLOUDINARY WATERMARK TRANSFORMATIONS - BOLD & VISIBLE
+        // If employer requires a large visible watermark, don't apply it synchronously during upload
+        // (that can time out). Instead, request an async eager transformation and return a watermarked
+        // URL generated from the uploaded public_id. This keeps upload fast while producing a large watermark.
+        let watermarkTransform: any = null
         if (applyWM) {
-          console.log(`🎨 Applying BOLD VISIBLE watermark to: ${file.name}`);
-          uploadOptions.transformation = [
-            // LARGE BOLD CENTERED WATERMARK
-            {
+          // Prefer using a pre-uploaded transparent PNG watermark (recommended).
+          // Set env var WATERMARK_PUBLIC_ID to the Cloudinary public_id of that watermark image.
+          const watermarkPublicId = process.env.WATERMARK_PUBLIC_ID || null
+
+          if (watermarkPublicId) {
+            // Large image overlay scaled to ~80% of the image width, centered and rotated.
+            watermarkTransform = {
+              overlay: watermarkPublicId,
+              width: '80%',
+              crop: 'scale',
+              gravity: 'center',
+              opacity: 60,
+              angle: -45
+            }
+
+            uploadOptions.eager = [watermarkTransform]
+            uploadOptions.eager_async = true
+          } else {
+            // Fallback to large text overlay if no watermark image is provided.
+            // Increase font size for visibility (adjust as needed).
+            watermarkTransform = {
               overlay: {
                 font_family: 'Arial',
-                font_size: 120, // Large font for maximum visibility
+                font_size: 180,
                 font_weight: 'bold',
                 text: 'yafrican.com'
               },
               color: '#FFFFFF',
-              opacity: 80, // High opacity for clear visibility
+              opacity: 60,
               angle: -45,
-              gravity: 'center',
+              gravity: 'center'
             }
-          ];
+
+            uploadOptions.eager = [watermarkTransform]
+            uploadOptions.eager_async = true
+          }
         }
 
-        // Upload to Cloudinary
-        const result = await cloudinary.uploader.upload(dataUri, uploadOptions);
-        
-        if (result.secure_url) {
-          results.push(result.secure_url);
-          console.log(`✅ Uploaded: ${result.secure_url}`);
-          console.log(`💧 Watermark: ${applyWM ? 'APPLIED' : 'NOT APPLIED'}`);
+        // Use upload_stream to pipe binary data directly to Cloudinary (avoids large data URIs)
+        const result: any = await new Promise((resolve, reject) => {
+          const uploadStream = cloudinary.uploader.upload_stream(uploadOptions, (error, res) => {
+            if (error) return reject(error)
+            resolve(res)
+          })
+
+          const stream = bufferToStream(buffer)
+          stream.pipe(uploadStream)
+        })
+
+        if (result && result.secure_url) {
+          // If watermark requested, generate a watermarked URL (Cloudinary will produce the derived
+          // image asynchronously because we supplied eager_async). We still return a watermarked URL
+          // built from the public_id so the UI shows the requested watermark immediately.
+          if (applyWM && watermarkTransform) {
+            try {
+              const watermarkedUrl = cloudinary.url(result.public_id, {
+                transformation: [watermarkTransform],
+                secure: true
+              })
+              results.push(watermarkedUrl)
+              console.log('✅ Uploaded and generated watermarked URL:', watermarkedUrl)
+              console.log('ℹ️ Eager async transform requested for public_id:', result.public_id)
+            } catch (urlErr) {
+              console.error('❌ Failed to generate watermarked URL, falling back to original:', urlErr)
+              results.push(result.secure_url)
+            }
+          } else {
+            results.push(result.secure_url)
+            console.log('✅ Uploaded via stream:', result.secure_url)
+          }
+        } else {
+          console.warn('⚠ Cloudinary upload returned no secure_url for', file.name, result)
         }
 
       } catch (err) {
-        console.error("⚠ Image error:", err);
-        continue;
+        console.error('⚠ Image error for', file.name, err)
+        // If watermark caused the failure, retry once without watermark
+        if (applyWM) {
+          try {
+            console.log('🔁 Retrying without watermark for', file.name)
+            const arrayBuffer = await file.arrayBuffer()
+            const buffer = Buffer.from(arrayBuffer)
+            const retryResult: any = await new Promise((resolve, reject) => {
+              const uploadStream = cloudinary.uploader.upload_stream({ folder: 'nextjs_products', resource_type: 'image' }, (error, res) => {
+                if (error) return reject(error)
+                resolve(res)
+              })
+              const stream = bufferToStream(buffer)
+              stream.pipe(uploadStream)
+            })
+
+            if (retryResult && retryResult.secure_url) {
+              results.push(retryResult.secure_url)
+              console.log('✅ Retry (no watermark) succeeded:', retryResult.secure_url)
+              continue
+            }
+          } catch (retryErr) {
+            console.error('❌ Retry without watermark failed for', file.name, retryErr)
+          }
+        }
+
+        // Continue to next file if this one failed
+        continue
       }
     }
 
