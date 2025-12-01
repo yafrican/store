@@ -146,7 +146,6 @@
 //     return NextResponse.redirect(errorUrl);
 //   }
 // }
-// app/api/auth/google/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -160,29 +159,42 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
 
 export async function GET(request: NextRequest) {
   try {
+    console.log('=== GOOGLE OAUTH DEBUG ===');
+    console.log('Request URL:', request.url);
+    console.log('Host header:', request.headers.get('host'));
+    console.log('NODE_ENV:', process.env.NODE_ENV);
+    console.log('NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
+    console.log('GOOGLE_CLIENT_ID exists:', !!GOOGLE_CLIENT_ID);
+    console.log('========================');
+    
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
     
-    console.log('🔍 Google OAuth started, code exists:', !!code);
+    // CRITICAL FIX: Determine the correct domain
+    let baseDomain = 'https://yafrican.com'; // Default to production
     
-    // Get the current host/domain dynamically
     const host = request.headers.get('host');
-    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-    const currentDomain = `${protocol}://${host}`;
+    if (host) {
+      // If host contains localhost, use http
+      if (host.includes('localhost')) {
+        baseDomain = `http://${host}`;
+      } else {
+        baseDomain = `https://${host}`;
+      }
+    }
     
-    // Use dynamic redirect URI based on current request domain
-    const redirectUri = `${currentDomain}/api/auth/google`;
-    console.log('🔍 Using redirect URI:', redirectUri);
+    const redirectUri = `${baseDomain}/api/auth/google`;
+    console.log('🔍 FINAL redirectUri:', redirectUri);
     
     if (!code) {
-      // First step: Redirect to Google OAuth
+      // Step 1: Redirect to Google
       const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile&access_type=offline&prompt=consent`;
       
-      console.log('🔍 Redirecting to Google OAuth');
+      console.log('🔍 Google Auth URL:', googleAuthUrl);
       return NextResponse.redirect(googleAuthUrl);
     }
 
-    // Exchange code for tokens
+    // Step 2: Exchange code for tokens
     console.log('🔍 Exchanging code for token...');
     
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
@@ -192,7 +204,7 @@ export async function GET(request: NextRequest) {
         code,
         client_id: GOOGLE_CLIENT_ID,
         client_secret: GOOGLE_CLIENT_SECRET,
-        redirect_uri: redirectUri, // Use the same redirectUri
+        redirect_uri: redirectUri,
         grant_type: 'authorization_code',
       }),
     });
@@ -201,30 +213,28 @@ export async function GET(request: NextRequest) {
     console.log('🔍 Token response:', tokenData);
 
     if (!tokenData.access_token) {
-      throw new Error(`Google token error: ${tokenData.error_description || 'No access token'}`);
+      throw new Error(`Google token error: ${JSON.stringify(tokenData)}`);
     }
 
     // Get user info
     const userResponse = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: `Bearer ${tokenData.access_token}` },
     });
-    const googleUser = await userResponse.json();
     
-    console.log('🔍 Google user info:', {
-      id: googleUser.id,
-      email: googleUser.email,
-      name: googleUser.name,
-      picture: googleUser.picture ? 'Yes' : 'No'
-    });
+    if (!userResponse.ok) {
+      throw new Error(`Failed to get user info: ${userResponse.statusText}`);
+    }
+    
+    const googleUser = await userResponse.json();
+    console.log('🔍 Google user:', googleUser.email);
 
     await connectMongo();
     
-    // Find existing user by email
+    // Find or create user
     let user = await User.findOne({ email: googleUser.email.toLowerCase() });
     
     if (!user) {
-      console.log('📝 Creating new user for Google login...');
-      
+      console.log('📝 Creating new user...');
       const randomPassword = crypto.randomBytes(16).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
       
@@ -240,10 +250,6 @@ export async function GET(request: NextRequest) {
         role: 'customer',
         status: 'active',
       });
-      
-      console.log('✅ New user created:', user.email);
-    } else {
-      console.log('✅ Existing user found:', user.email);
     }
 
     // Create JWT token
@@ -261,20 +267,16 @@ export async function GET(request: NextRequest) {
       { expiresIn: '30d' }
     );
 
-    console.log('✅ JWT token created, redirecting to home');
-    
-    // Redirect to home page
-    const response = NextResponse.redirect(`${currentDomain}/`);
-    
-    // Set the cookie
+    // Redirect with cookie
+    const response = NextResponse.redirect(`${baseDomain}/`);
     response.cookies.set({
       name: 'token',
       value: token,
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: baseDomain.startsWith('https'),
       sameSite: 'strict',
       path: '/',
-      maxAge: 30 * 24 * 60 * 60, // 30 days
+      maxAge: 30 * 24 * 60 * 60,
     });
 
     return response;
@@ -282,13 +284,12 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('❌ Google OAuth error:', error);
     
-    // Get domain for error redirect
+    // Determine base domain for error redirect
     const host = request.headers.get('host');
-    const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
-    const currentDomain = `${protocol}://${host}`;
+    const baseDomain = host?.includes('localhost') 
+      ? `http://${host}` 
+      : `https://${host || 'yafrican.com'}`;
     
-    const errorUrl = `${currentDomain}/signin?error=${encodeURIComponent(error.message || 'Google login failed')}`;
-    
-    return NextResponse.redirect(errorUrl);
+    return NextResponse.redirect(`${baseDomain}/signin?error=${encodeURIComponent(error.message)}`);
   }
 }
