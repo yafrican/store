@@ -134,18 +134,54 @@ function SignInContent() {
   }
 
   const handleGoogleLogin = () => {
-    toast.info('Google login coming soon!', {
-      position: "top-right",
-      autoClose: 3000,
-    })
-  }
+  // Redirect to Google OAuth endpoint
+  window.location.href = '/api/auth/google';
+}
 
-  const handleFacebookLogin = () => {
-    toast.info('Facebook login coming soon!', {
+const handleFacebookLogin = () => {
+  // Redirect to Facebook OAuth endpoint
+  window.location.href = '/api/auth/facebook';
+}
+
+ // Add this useEffect after your other useEffect
+useEffect(() => {
+  // Check for token in URL (after social login redirect)
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+  const provider = urlParams.get('provider');
+  const error = urlParams.get('error');
+  
+  if (error) {
+    // Show error toast if OAuth failed
+    toast.error(`Login failed: ${error}`, {
+      position: "top-right",
+      autoClose: 5000,
+    });
+    
+    // Clean URL
+    window.history.replaceState({}, '', window.location.pathname);
+    return;
+  }
+  
+  if (token) {
+    // Auto-login with token from social login
+    console.log(`✅ Logged in with ${provider} via social login`);
+    
+    // Show success message
+    toast.success(`Welcome! Logged in with ${provider}`, {
       position: "top-right",
       autoClose: 3000,
-    })
+    });
+    
+    // Clean URL by removing token
+    window.history.replaceState({}, '', window.location.pathname);
+    
+    // Small delay to show message, then redirect
+    setTimeout(() => {
+      window.location.href = returnUrl || '/';
+    }, 1500);
   }
+}, [returnUrl]); // Add returnUrl as dependency
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -406,7 +442,7 @@ function SignInContent() {
             </motion.div>
 
             {/* Social Login */}
-            {/* <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 mb-6">
+            <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 mb-6">
               <button
                 type="button"
                 onClick={handleGoogleLogin}
@@ -423,7 +459,7 @@ function SignInContent() {
                 <FaFacebook className="w-5 h-5" />
                 <span className="text-sm font-medium">Facebook</span>
               </button>
-            </motion.div> */}
+            </motion.div> 
 
             {/* Sign Up Link */}
             <motion.div variants={itemVariants} className="text-center space-y-3">
