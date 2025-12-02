@@ -26,4 +26,13 @@ export interface CategoryConfig {
   subcategories?: string[]  // Made optional
   specifications: SpecificationField[]
   filters: FilterField[]
+  supportsVariableProducts?: boolean
+  variableAttributes?: ProductAttribute[] // For category-level attributes
+}
+
+export interface ProductAttribute {
+  name: string
+  values: string[]
+  type: 'select' | 'color' | 'text' | 'number'
+  required: boolean
 }

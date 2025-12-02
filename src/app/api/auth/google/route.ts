@@ -146,7 +146,7 @@
 //     return NextResponse.redirect(errorUrl);
 //   }
 // }
-// app/api/auth/google/route.ts - FIXED VERSION
+// app/api/auth/google/route.ts - UPDATED (REMOVE USERNAME)
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -250,13 +250,13 @@ export async function GET(request: NextRequest) {
       const randomPassword = crypto.randomBytes(16).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
       
-      // Create user with selected role
+      // Create user with selected role - REMOVE USERNAME FIELD!
       const userData: any = {
         name: googleUser.name,
         email: googleUser.email.toLowerCase(),
         phone: "",
         storeName: "",
-        username: "",
+        // REMOVED: username: "",  <-- DON'T INCLUDE THIS FIELD
         address: "",
         paymentMethod: "",
         passwordHash: hashedPassword,
@@ -274,7 +274,7 @@ export async function GET(request: NextRequest) {
       console.log(`✅ New ${userType} created via Google:`, user.email);
     } else {
       console.log('✅ Existing user found:', user.email);
-      // Optionally update role if needed (uncomment if you want to allow role change)
+      // Optionally update role if needed
       // if (user.role !== userType) {
       //   user.role = userType;
       //   if (userType === 'seller' && !user.storeName) {

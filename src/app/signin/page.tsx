@@ -507,14 +507,14 @@ useEffect(() => {
                 <FcGoogle className="w-5 h-5" />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Google</span>
               </button>
-              <button
+              {/* <button
                 type="button"
                 onClick={handleFacebookLogin}
                 className="flex items-center justify-center space-x-2 p-3 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors duration-300 text-blue-600 dark:text-blue-400"
               >
                 <FaFacebook className="w-5 h-5" />
                 <span className="text-sm font-medium">Facebook</span>
-              </button>
+              </button> */}
             </motion.div> 
 
             {/* Sign Up Link */}

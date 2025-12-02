@@ -1738,7 +1738,8 @@ const subcategoryConfigs: { [key: string]: { [key: string]: any } } = {
       { fieldName: 'menSize', label: 'Size', type: 'checkbox', required: false },
       { fieldName: 'menColor', label: 'Color', type: 'checkbox', required: false },
       { fieldName: 'menMaterial', label: 'Material', type: 'checkbox', required: false },
-    ]
+    ],
+    
   },
   'Women': {
     specifications: [
