@@ -131,6 +131,7 @@
 //     return NextResponse.redirect(errorUrl);
 //   }
 // }
+// app/api/auth/facebook/route.ts - Updated version
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -146,21 +147,26 @@ export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
+    const userType = searchParams.get('userType') || 'customer';
     
-    console.log('🔍 Facebook OAuth started, code exists:', !!code);
+    console.log('🔍 Facebook OAuth started, userType:', userType);
     
-    // FIXED: Get the current host/domain dynamically
+    // Validate userType
+    const validUserTypes = ['customer', 'seller'];
+    const finalUserType = validUserTypes.includes(userType) ? userType : 'customer';
+    
+    // Get the current host/domain dynamically
     const host = request.headers.get('host');
     const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
     const currentDomain = `${protocol}://${host}`;
     
-    // FIXED: Use dynamic redirect URI
+    // Use dynamic redirect URI with state parameter
+    const state = JSON.stringify({ userType: finalUserType });
     const redirectUri = `${currentDomain}/api/auth/facebook`;
-    console.log('🔍 Using Facebook redirect URI:', redirectUri);
     
     if (!code) {
-      // First step: Redirect to Facebook OAuth
-      const facebookAuthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${FACEBOOK_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=email,public_profile`;
+      // First step: Redirect to Facebook OAuth with state
+      const facebookAuthUrl = `https://www.facebook.com/v19.0/dialog/oauth?client_id=${FACEBOOK_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=email,public_profile&state=${encodeURIComponent(state)}`;
       
       console.log('🔍 Redirecting to Facebook OAuth');
       return NextResponse.redirect(facebookAuthUrl);
@@ -194,27 +200,27 @@ export async function GET(request: NextRequest) {
     let user = await User.findOne({ email: facebookUser.email.toLowerCase() });
     
     if (!user) {
-      console.log('📝 Creating new user for Facebook login...');
+      console.log(`📝 Creating new ${finalUserType} for Facebook login...`);
       
       // Generate a random password and hash it
       const randomPassword = crypto.randomBytes(16).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
       
-      // Create user
+      // Create user with selected role
       user = await User.create({
         name: facebookUser.name,
         email: facebookUser.email.toLowerCase(),
         phone: "",
-        storeName: "",
+        storeName: finalUserType === 'seller' ? `${facebookUser.name}'s Store` : "",
         username: "",  
         address: "",
         paymentMethod: "",
         passwordHash: hashedPassword,
-        role: 'customer',
+        role: finalUserType,
         status: 'active'
       });
       
-      console.log('✅ New user created via Facebook:', user.email);
+      console.log(`✅ New ${finalUserType} created via Facebook:`, user.email);
     } else {
       console.log('✅ Existing user found via Facebook:', user.email);
     }
@@ -234,10 +240,18 @@ export async function GET(request: NextRequest) {
       { expiresIn: '30d' }
     );
 
-    console.log('✅ Facebook JWT token created, redirecting to home');
+    // Determine redirect URL based on user role
+    let redirectUrl = `${currentDomain}/`;
+    if (user.role === 'seller') {
+      redirectUrl = `${currentDomain}/seller/dashboard`;
+    } else if (user.role === 'admin') {
+      redirectUrl = `${currentDomain}/admin/dashboard`;
+    }
+
+    console.log(`✅ Facebook JWT token created, redirecting to ${redirectUrl}`);
     
-    // FIXED: Redirect to current domain
-    const response = NextResponse.redirect(`${currentDomain}/`);
+    // Redirect to appropriate dashboard
+    const response = NextResponse.redirect(redirectUrl);
     
     // Set the cookie
     response.cookies.set({
@@ -255,7 +269,6 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('❌ Facebook OAuth error:', error);
     
-    // FIXED: Error redirect to current domain
     const host = request.headers.get('host');
     const protocol = process.env.NODE_ENV === 'production' ? 'https' : 'http';
     const currentDomain = `${protocol}://${host}`;

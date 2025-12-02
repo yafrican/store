@@ -105,3 +105,13 @@ body {
 .animate-slide-down {
   animation: slideDown 0.3s ease-out;
 }
+@media (max-width: 768px) {
+  #chatbase-bubble,
+  .chatbase-bubble,
+  .cb-bubble,
+  [id*="chatbase"],
+  [class*="chatbase"] {
+    bottom: 90px !important;
+    z-index: 999999 !important;
+  }
+}

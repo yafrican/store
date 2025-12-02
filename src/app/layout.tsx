@@ -61,7 +61,8 @@ import { WishlistProvider } from './contexts/WishlistContext'
 import { CartProvider } from './contexts/CartContext'
 import Footer from '@/components/Footer'
 import ToastProvider from '@/components/ToastProvider'
-
+import Chatwidget from '@/components/ChatWidget'
+import ChatWidget from '@/components/ChatWidget'
 // Generate a unique build ID
 const BUILD_ID = process.env.BUILD_ID || Date.now().toString();
 

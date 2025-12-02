@@ -79,7 +79,32 @@ export default function Footer() {
     return () => window.removeEventListener("load", onLoad)
   }, [])
 
- 
+ // Add this useEffect in your Footer component
+useEffect(() => {
+  // Debug: Check what element Chatbase creates
+  const checkChatWidget = () => {
+    const allElements = Array.from(document.querySelectorAll('*'));
+    const chatElements = allElements.filter(el => 
+      el.id?.includes('chat') || 
+      el.className?.toString().includes('chat') ||
+      el.tagName?.toLowerCase().includes('chat')
+    );
+    
+    console.log('Chat widget elements found:', chatElements);
+    
+    chatElements.forEach(el => {
+      console.log('Element:', {
+        id: el.id,
+        className: el.className,
+        tagName: el.tagName,
+        styles: window.getComputedStyle(el)
+      });
+    });
+  };
+  
+  // Run after Chatbase loads
+  setTimeout(checkChatWidget, 2000);
+}, []);
   // Don't render footer on mobile
   if (!isDesktop) {
     return null

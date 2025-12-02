@@ -10,11 +10,13 @@ import {
   LockClosedIcon, 
   EyeIcon, 
   EyeSlashIcon,
-  UserIcon 
+  UserIcon, 
+  ShoppingBagIcon
 } from '@heroicons/react/24/outline'
 import { FcGoogle } from 'react-icons/fc'
 import { FaFacebook, FaShieldAlt, FaRocket } from 'react-icons/fa'
 import 'react-toastify/dist/ReactToastify.css'
+import { StoreIcon } from 'lucide-react'
 
 // Move the main content to a separate component that uses useSearchParams
 function SignInContent() {
@@ -24,6 +26,7 @@ function SignInContent() {
   const [showPassword, setShowPassword] = useState(false)
   const searchParams = useSearchParams()
   const returnUrl = searchParams.get('returnUrl') || '/'
+const [userType, setUserType] = useState<'customer' | 'seller'>('customer');
 
   // Check if user is already logged in
   useEffect(() => {
@@ -132,17 +135,23 @@ function SignInContent() {
       setLoading(false)
     }
   }
-
-  const handleGoogleLogin = () => {
-  // Redirect to Google OAuth endpoint
-  window.location.href = '/api/auth/google';
+const handleGoogleLogin = () => {
+  // Pass userType as query parameter
+  window.location.href = `/api/auth/google?userType=${userType}`;
 }
 
+//   const handleGoogleLogin = () => {
+//   // Redirect to Google OAuth endpoint
+//   window.location.href = '/api/auth/google';
+// }
+
+// const handleFacebookLogin = () => {
+//   // Redirect to Facebook OAuth endpoint
+//   window.location.href = '/api/auth/facebook';
+// }
 const handleFacebookLogin = () => {
-  // Redirect to Facebook OAuth endpoint
-  window.location.href = '/api/auth/facebook';
+  window.location.href = `/api/auth/facebook?userType=${userType}`;
 }
-
  // Add this useEffect after your other useEffect
 useEffect(() => {
   // Check for token in URL (after social login redirect)
@@ -440,7 +449,54 @@ useEffect(() => {
               <span className="px-4 text-gray-500 dark:text-gray-400 text-sm">Or continue with</span>
               <div className="flex-1 border-t border-gray-300 dark:border-gray-600"></div>
             </motion.div>
-
+{/* Add this section BEFORE the Social Login buttons */}
+<motion.div variants={itemVariants} className="mb-6">
+  <div className="text-center mb-4">
+    <p className="text-gray-600 dark:text-gray-300 mb-2">
+      How would you like to use Yafrican?
+    </p>
+  </div>
+  
+  <div className="flex rounded-xl border border-gray-300 dark:border-gray-600 p-1 bg-gray-50 dark:bg-gray-800">
+    <button
+      type="button"
+      onClick={() => setUserType('customer')}
+      className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+        userType === 'customer'
+          ? 'bg-white hover:border border-yellow-500 dark:bg-gray-700 shadow-md text-yellow-600 dark:text-yellow-400'
+          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+      }`}
+    >
+      <div className="flex flex-col items-center gap-1">
+        <ShoppingBagIcon className="w-5 h-5" />
+        <span className="text-sm">As Customer</span>
+      </div>
+    </button>
+    
+    <button
+      type="button"
+      onClick={() => setUserType('seller')}
+      className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-200 ${
+        userType === 'seller'
+          ? 'bg-white hover:border border-yellow-500 dark:bg-gray-700 shadow-md text-yellow-600 dark:text-yellow-400'
+          : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
+      }`}
+    >
+      <div className="flex flex-col items-center gap-1">
+        <StoreIcon className="w-5 h-5" />
+        <span className="text-sm">As Seller</span>
+      </div>
+    </button>
+  </div>
+  
+  <div className="mt-3 text-sm text-gray-500 dark:text-gray-400 text-center">
+    {userType === 'customer' ? (
+      <span>🎯 Browse products, add to cart, and make purchases</span>
+    ) : (
+      <span>🏪 Create your store, list products, and manage orders</span>
+    )}
+  </div>
+</motion.div>
             {/* Social Login */}
             <motion.div variants={itemVariants} className="grid grid-cols-2 gap-3 mb-6">
               <button

@@ -146,6 +146,7 @@
 //     return NextResponse.redirect(errorUrl);
 //   }
 // }
+// app/api/auth/google/route.ts - FIXED VERSION
 import { NextRequest, NextResponse } from 'next/server';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -160,22 +161,30 @@ const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
 export async function GET(request: NextRequest) {
   try {
     console.log('=== GOOGLE OAUTH DEBUG ===');
-    console.log('Request URL:', request.url);
-    console.log('Host header:', request.headers.get('host'));
-    console.log('NODE_ENV:', process.env.NODE_ENV);
-    console.log('NEXTAUTH_URL:', process.env.NEXTAUTH_URL);
-    console.log('GOOGLE_CLIENT_ID exists:', !!GOOGLE_CLIENT_ID);
-    console.log('========================');
-    
     const { searchParams } = new URL(request.url);
     const code = searchParams.get('code');
+    const stateParam = searchParams.get('state');
     
-    // CRITICAL FIX: Determine the correct domain
-    let baseDomain = 'https://yafrican.com'; // Default to production
+    // PARSE the state parameter to get userType
+    let userType = 'customer'; // Default
     
+    if (stateParam) {
+      try {
+        const state = JSON.parse(stateParam);
+        if (state.userType && (state.userType === 'customer' || state.userType === 'seller')) {
+          userType = state.userType;
+        }
+      } catch (error) {
+        console.log('Could not parse state parameter:', error);
+      }
+    }
+    
+    console.log('Parsed user type from state:', userType);
+    
+    // Determine the correct domain
+    let baseDomain = 'https://yafrican.com';
     const host = request.headers.get('host');
     if (host) {
-      // If host contains localhost, use http
       if (host.includes('localhost')) {
         baseDomain = `http://${host}`;
       } else {
@@ -184,13 +193,16 @@ export async function GET(request: NextRequest) {
     }
     
     const redirectUri = `${baseDomain}/api/auth/google`;
-    console.log('🔍 FINAL redirectUri:', redirectUri);
     
+    // Step 1: If no code, redirect to Google
     if (!code) {
-      // Step 1: Redirect to Google
-      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile&access_type=offline&prompt=consent`;
+      // Get userType from query parameter (initial request)
+      const initialUserType = searchParams.get('userType') || 'customer';
+      const state = JSON.stringify({ userType: initialUserType });
       
-      console.log('🔍 Google Auth URL:', googleAuthUrl);
+      const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${GOOGLE_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=email%20profile&access_type=offline&prompt=consent&state=${encodeURIComponent(state)}`;
+      
+      console.log('🔍 Google Auth URL with state:', googleAuthUrl);
       return NextResponse.redirect(googleAuthUrl);
     }
 
@@ -234,11 +246,12 @@ export async function GET(request: NextRequest) {
     let user = await User.findOne({ email: googleUser.email.toLowerCase() });
     
     if (!user) {
-      console.log('📝 Creating new user...');
+      console.log(`📝 Creating new ${userType}...`);
       const randomPassword = crypto.randomBytes(16).toString('hex');
       const hashedPassword = await bcrypt.hash(randomPassword, 10);
       
-      user = await User.create({
+      // Create user with selected role
+      const userData: any = {
         name: googleUser.name,
         email: googleUser.email.toLowerCase(),
         phone: "",
@@ -247,9 +260,29 @@ export async function GET(request: NextRequest) {
         address: "",
         paymentMethod: "",
         passwordHash: hashedPassword,
-        role: 'customer',
+        role: userType,
         status: 'active',
-      });
+      };
+      
+      // Add storeName for sellers
+      if (userType === 'seller') {
+        userData.storeName = `${googleUser.name}'s Store`;
+      }
+      
+      user = await User.create(userData);
+      
+      console.log(`✅ New ${userType} created via Google:`, user.email);
+    } else {
+      console.log('✅ Existing user found:', user.email);
+      // Optionally update role if needed (uncomment if you want to allow role change)
+      // if (user.role !== userType) {
+      //   user.role = userType;
+      //   if (userType === 'seller' && !user.storeName) {
+      //     user.storeName = `${googleUser.name}'s Store`;
+      //   }
+      //   await user.save();
+      //   console.log(`🔄 Updated user role to ${userType}`);
+      // }
     }
 
     // Create JWT token
@@ -267,8 +300,18 @@ export async function GET(request: NextRequest) {
       { expiresIn: '30d' }
     );
 
+    // Determine redirect URL based on user role
+    let redirectUrl = `${baseDomain}/`;
+    if (user.role === 'seller') {
+      redirectUrl = `${baseDomain}/seller/dashboard`;
+    } else if (user.role === 'admin') {
+      redirectUrl = `${baseDomain}/admin/dashboard`;
+    }
+
+    console.log(`🔀 Redirecting ${user.role} to: ${redirectUrl}`);
+    
     // Redirect with cookie
-    const response = NextResponse.redirect(`${baseDomain}/`);
+    const response = NextResponse.redirect(redirectUrl);
     response.cookies.set({
       name: 'token',
       value: token,
@@ -284,7 +327,6 @@ export async function GET(request: NextRequest) {
   } catch (error: any) {
     console.error('❌ Google OAuth error:', error);
     
-    // Determine base domain for error redirect
     const host = request.headers.get('host');
     const baseDomain = host?.includes('localhost') 
       ? `http://${host}` 
