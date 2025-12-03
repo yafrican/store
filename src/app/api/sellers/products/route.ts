@@ -93,8 +93,7 @@ function verifyToken(req: Request) {
     throw error
   }
 }
-
-// GET seller products with status filtering - FIXED
+// GET seller products with status filtering - UPDATED
 export async function GET(req: Request) {
   try {
     console.log('🔄 Starting GET /api/sellers/products...')
@@ -119,9 +118,12 @@ export async function GET(req: Request) {
 
     console.log('📦 Raw products from DB:', products.length)
 
-    // Enhanced product formatting
+    // Enhanced product formatting with variable product support
     const formattedProducts = products.map(product => {
-      const hasStock = product.stock > 0
+      const hasStock = product.productType === 'simple' 
+        ? product.stock > 0
+        : product.variations?.some((v: any) => v.stock > 0) || false
+      
       const isInStock = product.inStock !== undefined ? product.inStock && hasStock : hasStock
       
       const normalizedCategory = product.category ? product.category.toUpperCase() : 'UNCATEGORIZED'
@@ -130,28 +132,54 @@ export async function GET(req: Request) {
         ? product.specifications 
         : {}
 
-      return {
+      // Calculate total stock for variable products
+      let totalStock = product.stock || 0
+      if (product.productType === 'variable' && product.variations) {
+        totalStock = product.variations.reduce((total: number, variation: any) => 
+          total + (variation.stock || 0), 0)
+      }
+
+      const formatted: any = {
         _id: product._id,
         name: product.name,
+        slug: product.slug,
         price: product.price,
         originalPrice: product.originalPrice || product.price,
         category: normalizedCategory,
         subcategory: product.subcategory || '',
+        productType: product.productType || 'simple',
         images: product.images || [],
         description: product.description || '',
         status: product.status || 'pending',
         inStock: isInStock,
         stock: product.stock || 0,
+        totalStock: totalStock,
         seller: product.seller,
         specifications: safeSpecifications,
-            deliveryLocations: product.deliveryLocations || [], // ✅ ADD THIS LINE
-  deliveryTime: product.deliveryTime || "", // Add this line
-freeShipping: product.freeShipping || false,
-    warrantyPeriod: product.warrantyPeriod || '',
-    warrantyType: product.warrantyType || '',
+        deliveryLocations: product.deliveryLocations || [],
+        deliveryTime: product.deliveryTime || "",
+        freeShipping: product.freeShipping || false,
+        warrantyPeriod: product.warrantyPeriod || '',
+        warrantyType: product.warrantyType || '',
         createdAt: product.createdAt,
         updatedAt: product.updatedAt
       }
+
+      // Add variable product data
+      if (product.productType === 'variable') {
+        formatted.attributes = product.attributes || []
+        formatted.variations = product.variations || []
+        formatted.variationsCount = product.variations?.length || 0
+        
+        // Calculate price range
+        if (product.variations && product.variations.length > 0) {
+          const prices = product.variations.map((v: any) => v.price || product.price)
+          formatted.lowestPrice = Math.min(...prices)
+          formatted.highestPrice = Math.max(...prices)
+        }
+      }
+
+      return formatted
     })
 
     console.log('✅ Successfully formatted', formattedProducts.length, 'products')
@@ -172,27 +200,118 @@ freeShipping: product.freeShipping || false,
     })
   }
 }
+// GET seller products with status filtering - FIXED
+// export async function GET(req: Request) {
+//   try {
+//     console.log('🔄 Starting GET /api/sellers/products...')
+    
+//     const payload = verifyToken(req)
+//     await connectMongo()
 
-// POST create new product
-// POST create new product - ADD VALIDATION
+//     // Get query parameters for filtering
+//     const url = new URL(req.url)
+//     const status = url.searchParams.get('status')
+    
+//     let query: any = { seller: new mongoose.Types.ObjectId(payload.id) }
+    
+//     // If status specified, filter by status
+//     if (status && status !== 'all') {
+//       query.status = status
+//     }
+
+//     console.log('🔍 Fetching seller products with query:', query)
+
+//     const products = await Product.find(query).sort({ createdAt: -1 })
+
+//     console.log('📦 Raw products from DB:', products.length)
+
+//     // Enhanced product formatting
+//     const formattedProducts = products.map(product => {
+//       const hasStock = product.stock > 0
+//       const isInStock = product.inStock !== undefined ? product.inStock && hasStock : hasStock
+      
+//       const normalizedCategory = product.category ? product.category.toUpperCase() : 'UNCATEGORIZED'
+
+//       const safeSpecifications = product.specifications && typeof product.specifications === 'object' 
+//         ? product.specifications 
+//         : {}
+
+//       return {
+//         _id: product._id,
+//         name: product.name,
+//         price: product.price,
+//         originalPrice: product.originalPrice || product.price,
+//         category: normalizedCategory,
+//         subcategory: product.subcategory || '',
+//         images: product.images || [],
+//         description: product.description || '',
+//         status: product.status || 'pending',
+//         inStock: isInStock,
+//         stock: product.stock || 0,
+//         seller: product.seller,
+//         specifications: safeSpecifications,
+//             deliveryLocations: product.deliveryLocations || [], // ✅ ADD THIS LINE
+//   deliveryTime: product.deliveryTime || "", // Add this line
+// freeShipping: product.freeShipping || false,
+//     warrantyPeriod: product.warrantyPeriod || '',
+//     warrantyType: product.warrantyType || '',
+//         createdAt: product.createdAt,
+//         updatedAt: product.updatedAt
+//       }
+//     })
+
+//     console.log('✅ Successfully formatted', formattedProducts.length, 'products')
+
+//     return NextResponse.json({ 
+//       success: true, 
+//       products: formattedProducts
+//     })
+    
+//   } catch (error: any) {
+//     console.error("❌ Products fetch error:", error)
+//     return NextResponse.json({ 
+//       success: false,
+//       error: error.message || "Server error" 
+//     }, { 
+//       status: error.message.includes("Not authenticated") ? 401 : 
+//             error.message.includes("Access denied") ? 403 : 500 
+//     })
+//   }
+// }
+// POST create new product - UPDATED FOR VARIABLE PRODUCTS
+// POST create new product - UPDATED FOR VARIABLE PRODUCTS
 export async function POST(req: Request) {
   try {
     console.log('🔄 Starting POST /api/sellers/products...')
-    
+     
     const payload = verifyToken(req)
     await connectMongo()
 
     const data = await req.json()
-    console.log('📦 Received product data:', data)
+    console.log('📦 Received product data:', JSON.stringify(data, null, 2))
+ // ✅ ADD THIS: Safe specifications variable
+    const safeSpecifications = data.specifications && typeof data.specifications === 'object' 
+      ? data.specifications 
+      : {}
+    // ✅ DEBUG LOG
+    console.log('📤 RECEIVED FROM FRONTEND:', {
+      productType: data.productType,
+      hasVariations: data.variations && data.variations.length > 0,
+      variationsCount: data.variations?.length || 0,
+      variations: data.variations?.slice(0, 2)
+    })
 
-    // ✅ ADD: Valid category enum values
-    // AFTER (CORRECT - matches your MongoDB schema):
-const validCategories = [
-  'ELECTRONICS', 'CLOTHING', 'HOME_FURNITURE_APPLIANCES', 'BEAUTY_PERSONAL_CARE',
-  'LEISURE_ACTIVITIES', 'BABIES_KIDS', 'AUTOMOTIVE', 'BOOKS_MEDIA',
-  'JEWELRY_ACCESSORIES', 'FOOD_AGRICULTURE_FARMING', 'SERVICES', 'PROPERTY',
-  'VEHICLES', 'COMMERCIAL_EQUIPMENT', 'REPAIR_CONSTRUCTION', 'ANIMALS_PETS'
-]
+    // ✅ ADD: Valid product types
+    const validProductTypes = ['simple', 'variable']
+    
+    // ✅ ADD: Validate product type
+    const productType = data.productType || 'simple'
+    if (!validProductTypes.includes(productType)) {
+      return NextResponse.json({
+        success: false,
+        error: `Invalid product type: "${productType}". Must be one of: ${validProductTypes.join(', ')}`
+      }, { status: 400 })
+    }
 
     // Validation
     if (!data.name?.trim()) {
@@ -215,7 +334,75 @@ const validCategories = [
         error: "Category is required"
       }, { status: 400 })
     }
-// ✅ FIXED: Slug generation with proper await
+
+    // ✅ ADD: Category validation
+    const validCategories = [
+      'ELECTRONICS', 'CLOTHING', 'HOME_FURNITURE_APPLIANCES', 'BEAUTY_PERSONAL_CARE',
+      'LEISURE_ACTIVITIES', 'BABIES_KIDS', 'AUTOMOTIVE', 'BOOKS_MEDIA',
+      'JEWELRY_ACCESSORIES', 'FOOD_AGRICULTURE_FARMING', 'SERVICES', 'PROPERTY',
+      'VEHICLES', 'COMMERCIAL_EQUIPMENT', 'REPAIR_CONSTRUCTION', 'ANIMALS_PETS'
+    ]
+
+    const category = data.category.trim().toUpperCase()
+    if (!validCategories.includes(category)) {
+      return NextResponse.json({
+        success: false,
+        error: `Invalid category: "${category}". Must be one of: ${validCategories.join(', ')}`
+      }, { status: 400 })
+    }
+
+    // ✅ ADD: Validate product type-specific fields
+    if (productType === 'simple') {
+      // Simple product validation
+      const stock = data.stock ? parseInt(data.stock) : 1
+      if (stock < 0) {
+        return NextResponse.json({
+          success: false,
+          error: "Stock cannot be negative"
+        }, { status: 400 })
+      }
+    } else if (productType === 'variable') {
+      // Variable product validation
+      const hasVariations = data.variations && Array.isArray(data.variations) && data.variations.length > 0
+      
+      if (!hasVariations) {
+        return NextResponse.json({
+          success: false,
+          error: "Variable products require at least one variation"
+        }, { status: 400 })
+      }
+
+      // Validate each variation
+      for (let i = 0; i < data.variations.length; i++) {
+        const variation = data.variations[i]
+        
+        if (!variation.attributes || typeof variation.attributes !== 'object') {
+          return NextResponse.json({
+            success: false,
+            error: `Variation ${i + 1} must have attributes`
+          }, { status: 400 })
+        }
+
+        const stock = variation.stock ? parseInt(variation.stock) : 0
+        if (stock < 0) {
+          return NextResponse.json({
+            success: false,
+            error: `Variation ${i + 1} stock cannot be negative`
+          }, { status: 400 })
+        }
+      }
+
+      // Check if any variation has stock
+      const hasVariationStock = data.variations.some((v: any) => parseInt(v.stock || '0') > 0)
+      if (!hasVariationStock) {
+        return NextResponse.json({
+          success: false,
+          error: "At least one variation must have stock"
+        }, { status: 400 })
+      }
+    }
+
+    // ✅ FIXED: Slug generation
     const generateSlug = (name: string) => {
       return name
         .toLowerCase()
@@ -231,17 +418,14 @@ const validCategories = [
     let slug = baseSlug
     let counter = 1
 
-    // ✅ FIXED: Add await here
     while (await Product.findOne({ slug })) {
       slug = `${baseSlug}-${counter}`
       counter++
     }
 
-    // If slug is empty (e.g., name contains non-Latin characters), fall back to a safe unique slug
     if (!baseSlug || baseSlug.trim() === '') {
       const fallback = `product-${Date.now().toString(36)}`
       slug = fallback
-      // Ensure uniqueness
       counter = 1
       while (await Product.findOne({ slug })) {
         slug = `${fallback}-${counter}`
@@ -250,66 +434,128 @@ const validCategories = [
     }
 
     console.log('🔄 Generated slug for seller product:', slug)
+// ✅ ADD: Calculate inStock for variable products
+let inStock = false
+let totalStock = 0
 
-    // ✅ FIX: Validate category against allowed enum values
-    const category = data.category.trim().toUpperCase()
-    console.log('🔍 Validating category:', category)
-    console.log('🔍 Valid categories:', validCategories)
+if (productType === 'simple') {
+  const stock = data.stock ? parseInt(data.stock) : 1
+  totalStock = stock
+  inStock = stock > 0
+} else if (productType === 'variable') {
+  // For variable products, check both main stock and variations
+  const mainStock = data.stock ? parseInt(data.stock) : 0
+  
+  // Calculate variation stock
+  const variationStock = data.variations ? 
+    data.variations.reduce((total: number, v: any) => total + parseInt(v.stock || '0'), 0) : 0
+  
+  // Total stock = main stock + variation stock
+  totalStock = mainStock + variationStock
+  
+  // Product is in stock if either has stock
+  const hasMainStock = mainStock > 0
+  const hasVariationStock = data.variations ? 
+    data.variations.some((v: any) => parseInt(v.stock || '0') > 0) : false
+  
+  inStock = hasMainStock || hasVariationStock || false // Ensure it's always a boolean
+} else {
+  // Default for simple products
+  const stock = data.stock ? parseInt(data.stock) : 1
+  totalStock = stock
+  inStock = stock > 0
+}
+//    // ✅ ADD: Calculate inStock for variable products
+// let inStock = false
+// let totalStock = 0
 
-    if (!validCategories.includes(category)) {
-      return NextResponse.json({
-        success: false,
-        error: `Invalid category: "${category}". Must be one of: ${validCategories.join(', ')}`
-      }, { status: 400 })
-    }
+// if (productType === 'simple') {
+//   const stock = data.stock ? parseInt(data.stock) : 1
+//   totalStock = stock
+//   inStock = stock > 0
+// } else if (productType === 'variable') {
+//   // For variable products, check both main stock and variations
+//   const mainStock = data.stock ? parseInt(data.stock) : 0
+  
+//   // Calculate variation stock
+//   const variationStock = data.variations ? 
+//     data.variations.reduce((total: number, v: any) => total + parseInt(v.stock || '0'), 0) : 0
+  
+//   // Total stock = main stock + variation stock
+//   totalStock = mainStock + variationStock
+  
+//   // Product is in stock if either has stock
+//   const hasMainStock = mainStock > 0
+//   const hasVariationStock = data.variations ? 
+//     data.variations.some((v: any) => parseInt(v.stock || '0') > 0) : false
+  
+//   inStock = hasMainStock || hasVariationStock
+// }
 
-    const stock = data.stock ? parseInt(data.stock) : 1
-    if (stock < 0) {
-      return NextResponse.json({
-        success: false,
-        error: "Stock cannot be negative"
-      }, { status: 400 })
-    }
-
-    const safeSpecifications = data.specifications && typeof data.specifications === 'object' 
-      ? data.specifications 
-      : {}
-
-    const productData = {
+    // ✅ BUILD PRODUCT DATA WITH VARIABLE PRODUCT SUPPORT
+    const productData: any = {
       name: data.name.trim(),
-        slug: slug, // ✅ ADD THIS
-
+      slug: slug,
       price: parseFloat(data.price),
       originalPrice: data.originalPrice ? parseFloat(data.originalPrice) : parseFloat(data.price),
-      category: category, // ✅ Use the validated category
+      category: category,
       subcategory: data.subcategory ? data.subcategory.trim() : "",
       images: Array.isArray(data.images) ? data.images : [],
       description: data.description ? data.description.trim() : "",
       seller: new mongoose.Types.ObjectId(payload.id),
       status: 'pending',
-      inStock: stock > 0,
-      stock: stock,
+      productType: productType,
+      inStock: inStock,
+        stock: data.stock !== undefined ? parseInt(data.stock) : (productType === 'simple' ? 1 : 0),
+  totalStock: totalStock,
+      // stock: productType === 'simple' ? totalStock : 0,
       specifications: safeSpecifications,
-       deliveryLocations: Array.isArray(data.deliveryLocations) ? data.deliveryLocations : [] ,// ✅ ADD THIS LINE
-  deliveryTime: data.deliveryTime || "", // ✅ Make sure this is included
-freeShipping: data.freeShipping || false,
-  warrantyPeriod: data.warrantyPeriod || '',
-  warrantyType: data.warrantyType || ''
+      deliveryLocations: Array.isArray(data.deliveryLocations) ? data.deliveryLocations : [],
+      deliveryTime: data.deliveryTime || "",
+      freeShipping: data.freeShipping || false,
+      warrantyPeriod: data.warrantyPeriod || '',
+      warrantyType: data.warrantyType || ''
     }
 
-    console.log('📦 Creating product with validated data:', productData)
+    // ✅ ADD: Variable product fields
+    if (productType === 'variable' && data.variations) {
+      productData.attributes = Array.isArray(data.attributes) ? data.attributes : []
+      
+      // Process variations
+      productData.variations = data.variations.map((v: any, index: number) => {
+        const variationPrice = v.price ? parseFloat(v.price) : parseFloat(data.price)
+        const variationStock = parseInt(v.stock || '0')
+        
+        // Auto-generate SKU if not provided
+        let sku = v.sku
+        if (!sku) {
+          const attrString = Object.values(v.attributes || {})
+            .map((val: any) => val.toString().replace(/\s+/g, '').toLowerCase())
+            .join('-')
+          
+          sku = `${slug}-${attrString || `var-${index + 1}`}`
+        }
+
+        return {
+          sku: sku,
+          attributes: v.attributes || {},
+          price: variationPrice,
+          stock: variationStock,
+          image: v.image || '',
+          specifications: v.specifications || {}
+        }
+      })
+    }
+
+    console.log('📦 Creating product with data:', JSON.stringify(productData, null, 2))
 
     const product = await Product.create(productData)
 
-    const createdSpecifications = product.specifications && typeof product.specifications === 'object' 
-      ? product.specifications 
-      : {}
-
-    const formattedProduct = {
+    // ✅ ADD: Format response with variable product data
+    const formattedProduct: any = {
       _id: product._id,
       name: product.name,
-            slug: product.slug, // ✅ Make sure to return slug in response
-
+      slug: product.slug,
       price: product.price,
       originalPrice: product.originalPrice,
       category: product.category,
@@ -317,25 +563,39 @@ freeShipping: data.freeShipping || false,
       images: product.images,
       description: product.description,
       status: product.status,
+      productType: product.productType,
       inStock: product.inStock,
       stock: product.stock,
+      totalStock: product.totalStock || (product.productType === 'simple' ? product.stock : 0),
       seller: product.seller,
-      specifications: createdSpecifications,
-        deliveryLocations: product.deliveryLocations || [], // ✅ ADD THIS LINE
-          deliveryTime: product.deliveryTime || "", // ✅ Add this
-freeShipping: product.freeShipping || false,
-  warrantyPeriod: product.warrantyPeriod || '',
-  warrantyType: product.warrantyType || '',
+      specifications: product.specifications,
+      deliveryLocations: product.deliveryLocations || [],
+      deliveryTime: product.deliveryTime || "",
+      freeShipping: product.freeShipping || false,
+      warrantyPeriod: product.warrantyPeriod || '',
+      warrantyType: product.warrantyType || '',
       createdAt: product.createdAt,
       updatedAt: product.updatedAt
+    }
+
+    // ✅ ADD: Include attributes and variations in response
+    if (productType === 'variable' && product.variations) {
+      formattedProduct.attributes = product.attributes || []
+      formattedProduct.variations = product.variations || []
+      
+      // Calculate price range
+      if (product.variations && product.variations.length > 0) {
+        const prices = product.variations.map((v: any) => v.price || product.price)
+        formattedProduct.lowestPrice = Math.min(...prices)
+        formattedProduct.highestPrice = Math.max(...prices)
+      }
     }
 
     return NextResponse.json({
       success: true,
       product: formattedProduct,
-      message: "Product created successfully! It is now pending admin approval."
+      message: `Product created successfully${productType === 'variable' ? ' with ' + product.variations?.length + ' variations' : ''}! It is now pending admin approval.`
     }, { status: 201 })
-
   } catch (error: any) {
     console.error("❌ Product creation error:", error)
     
@@ -360,122 +620,308 @@ freeShipping: product.freeShipping || false,
     }, { status: 500 })
   }
 }
-// PATCH update product fields
-export async function PATCH(req: Request) {
-  try {
-    const payload = verifyToken(req)
-    await connectMongo()
-
-    const body = await req.json()
-    const { productId, inStock, stock } = body
-
-    if (!productId) {
-      return NextResponse.json({
-        success: false,
-        error: "Product ID is required"
-      }, { status: 400 })
-    }
-
-    const product = await Product.findOne({ 
-      _id: productId, 
-      seller: payload.id 
-    })
-
-    if (!product) {
-      return NextResponse.json({
-        success: false,
-        error: "Product not found or access denied"
-      }, { status: 404 })
-    }
-
-    const updateData: any = { updatedAt: new Date() }
+// // POST create new product - ADD VALIDATION
+// export async function POST(req: Request) {
+//   try {
+//     console.log('🔄 Starting POST /api/sellers/products...')
     
-    // ✅ EXISTING STOCK FIELDS
-    if (inStock !== undefined) {
-      updateData.inStock = Boolean(inStock)
-    }
+//     const payload = verifyToken(req)
+//     await connectMongo()
+
+//     const data = await req.json()
+//     console.log('📦 Received product data:', data)
+
+//     // ✅ ADD: Valid category enum values
+//     // AFTER (CORRECT - matches your MongoDB schema):
+// const validCategories = [
+//   'ELECTRONICS', 'CLOTHING', 'HOME_FURNITURE_APPLIANCES', 'BEAUTY_PERSONAL_CARE',
+//   'LEISURE_ACTIVITIES', 'BABIES_KIDS', 'AUTOMOTIVE', 'BOOKS_MEDIA',
+//   'JEWELRY_ACCESSORIES', 'FOOD_AGRICULTURE_FARMING', 'SERVICES', 'PROPERTY',
+//   'VEHICLES', 'COMMERCIAL_EQUIPMENT', 'REPAIR_CONSTRUCTION', 'ANIMALS_PETS'
+// ]
+
+//     // Validation
+//     if (!data.name?.trim()) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Product name is required"
+//       }, { status: 400 })
+//     }
+
+//     if (!data.price || isNaN(parseFloat(data.price)) || parseFloat(data.price) <= 0) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Valid price is required"
+//       }, { status: 400 })
+//     }
+
+//     if (!data.category?.trim()) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Category is required"
+//       }, { status: 400 })
+//     }
+// // ✅ FIXED: Slug generation with proper await
+//     const generateSlug = (name: string) => {
+//       return name
+//         .toLowerCase()
+//         .trim()
+//         .replace(/[^a-z0-9\s-]/g, '')
+//         .replace(/\s+/g, '-')
+//         .replace(/-+/g, '-')
+//         .replace(/^-+|-+$/g, '')
+//         .substring(0, 60)
+//     }
+
+//     const baseSlug = generateSlug(data.name.trim())
+//     let slug = baseSlug
+//     let counter = 1
+
+//     // ✅ FIXED: Add await here
+//     while (await Product.findOne({ slug })) {
+//       slug = `${baseSlug}-${counter}`
+//       counter++
+//     }
+
+//     // If slug is empty (e.g., name contains non-Latin characters), fall back to a safe unique slug
+//     if (!baseSlug || baseSlug.trim() === '') {
+//       const fallback = `product-${Date.now().toString(36)}`
+//       slug = fallback
+//       // Ensure uniqueness
+//       counter = 1
+//       while (await Product.findOne({ slug })) {
+//         slug = `${fallback}-${counter}`
+//         counter++
+//       }
+//     }
+
+//     console.log('🔄 Generated slug for seller product:', slug)
+
+//     // ✅ FIX: Validate category against allowed enum values
+//     const category = data.category.trim().toUpperCase()
+//     console.log('🔍 Validating category:', category)
+//     console.log('🔍 Valid categories:', validCategories)
+
+//     if (!validCategories.includes(category)) {
+//       return NextResponse.json({
+//         success: false,
+//         error: `Invalid category: "${category}". Must be one of: ${validCategories.join(', ')}`
+//       }, { status: 400 })
+//     }
+
+//     const stock = data.stock ? parseInt(data.stock) : 1
+//     if (stock < 0) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Stock cannot be negative"
+//       }, { status: 400 })
+//     }
+
+//     const safeSpecifications = data.specifications && typeof data.specifications === 'object' 
+//       ? data.specifications 
+//       : {}
+
+//     const productData = {
+//       name: data.name.trim(),
+//         slug: slug, // ✅ ADD THIS
+
+//       price: parseFloat(data.price),
+//       originalPrice: data.originalPrice ? parseFloat(data.originalPrice) : parseFloat(data.price),
+//       category: category, // ✅ Use the validated category
+//       subcategory: data.subcategory ? data.subcategory.trim() : "",
+//       images: Array.isArray(data.images) ? data.images : [],
+//       description: data.description ? data.description.trim() : "",
+//       seller: new mongoose.Types.ObjectId(payload.id),
+//       status: 'pending',
+//       inStock: stock > 0,
+//       stock: stock,
+//       specifications: safeSpecifications,
+//        deliveryLocations: Array.isArray(data.deliveryLocations) ? data.deliveryLocations : [] ,// ✅ ADD THIS LINE
+//   deliveryTime: data.deliveryTime || "", // ✅ Make sure this is included
+// freeShipping: data.freeShipping || false,
+//   warrantyPeriod: data.warrantyPeriod || '',
+//   warrantyType: data.warrantyType || ''
+//     }
+
+//     console.log('📦 Creating product with validated data:', productData)
+
+//     const product = await Product.create(productData)
+
+//     const createdSpecifications = product.specifications && typeof product.specifications === 'object' 
+//       ? product.specifications 
+//       : {}
+
+//     const formattedProduct = {
+//       _id: product._id,
+//       name: product.name,
+//             slug: product.slug, // ✅ Make sure to return slug in response
+
+//       price: product.price,
+//       originalPrice: product.originalPrice,
+//       category: product.category,
+//       subcategory: product.subcategory,
+//       images: product.images,
+//       description: product.description,
+//       status: product.status,
+//       inStock: product.inStock,
+//       stock: product.stock,
+//       seller: product.seller,
+//       specifications: createdSpecifications,
+//         deliveryLocations: product.deliveryLocations || [], // ✅ ADD THIS LINE
+//           deliveryTime: product.deliveryTime || "", // ✅ Add this
+// freeShipping: product.freeShipping || false,
+//   warrantyPeriod: product.warrantyPeriod || '',
+//   warrantyType: product.warrantyType || '',
+//       createdAt: product.createdAt,
+//       updatedAt: product.updatedAt
+//     }
+
+//     return NextResponse.json({
+//       success: true,
+//       product: formattedProduct,
+//       message: "Product created successfully! It is now pending admin approval."
+//     }, { status: 201 })
+
+//   } catch (error: any) {
+//     console.error("❌ Product creation error:", error)
     
-    if (stock !== undefined) {
-      const stockValue = parseInt(stock)
-      updateData.stock = stockValue
-      if (inStock === undefined) {
-        updateData.inStock = stockValue > 0
-      }
-    }
+//     if (error.code === 11000) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Product with this name already exists"
+//       }, { status: 400 })
+//     }
+    
+//     if (error.name === 'ValidationError') {
+//       const errors = Object.values(error.errors).map((err: any) => err.message)
+//       return NextResponse.json({
+//         success: false,
+//         error: errors.join(', ')
+//       }, { status: 400 })
+//     }
 
-    // ✅ ADD NEW FIELDS HANDLING
-    if (body.freeShipping !== undefined) {
-      updateData.freeShipping = Boolean(body.freeShipping)
-    }
-    if (typeof body.warrantyPeriod === 'string') {
-      updateData.warrantyPeriod = body.warrantyPeriod.trim()
-    }
-    if (typeof body.warrantyType === 'string') {
-      updateData.warrantyType = body.warrantyType.trim()
-    }
-    if (body.deliveryLocations !== undefined) {
-      updateData.deliveryLocations = Array.isArray(body.deliveryLocations) ? body.deliveryLocations : []
-    }
-    if (typeof body.deliveryTime === 'string') {
-      updateData.deliveryTime = body.deliveryTime.trim()
-    }
+//     return NextResponse.json({
+//       success: false,
+//       error: error.message || "Internal server error"
+//     }, { status: 500 })
+//   }
+// }
+// // PATCH update product fields
+// export async function PATCH(req: Request) {
+//   try {
+//     const payload = verifyToken(req)
+//     await connectMongo()
 
-    const updatedProduct = await Product.findByIdAndUpdate(
-      productId,
-      updateData,
-      { new: true, runValidators: true }
-    )
+//     const body = await req.json()
+//     const { productId, inStock, stock } = body
 
-    if (!updatedProduct) {
-      return NextResponse.json({
-        success: false,
-        error: "Failed to update product"
-      }, { status: 500 })
-    }
+//     if (!productId) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Product ID is required"
+//       }, { status: 400 })
+//     }
 
-    const safeSpecifications = updatedProduct.specifications && typeof updatedProduct.specifications === 'object' 
-      ? updatedProduct.specifications 
-      : {}
+//     const product = await Product.findOne({ 
+//       _id: productId, 
+//       seller: payload.id 
+//     })
 
-    // ✅ UPDATE FORMATTED PRODUCT WITH NEW FIELDS
-    const formattedProduct = {
-      _id: updatedProduct._id,
-      name: updatedProduct.name,
-      price: updatedProduct.price,
-      originalPrice: updatedProduct.originalPrice,
-      category: updatedProduct.category.toUpperCase(),
-      subcategory: updatedProduct.subcategory,
-      images: updatedProduct.images,
-      description: updatedProduct.description,
-      status: updatedProduct.status,
-      inStock: updatedProduct.inStock,
-      stock: updatedProduct.stock,
-      seller: updatedProduct.seller,
-      specifications: safeSpecifications,
-      // ✅ ADD NEW FIELDS TO RESPONSE
-      deliveryLocations: updatedProduct.deliveryLocations || [],
-      deliveryTime: updatedProduct.deliveryTime || "",
-      freeShipping: updatedProduct.freeShipping || false,
-      warrantyPeriod: updatedProduct.warrantyPeriod || '',
-      warrantyType: updatedProduct.warrantyType || '',
-      createdAt: updatedProduct.createdAt,
-      updatedAt: updatedProduct.updatedAt
-    }
+//     if (!product) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Product not found or access denied"
+//       }, { status: 404 })
+//     }
 
-    return NextResponse.json({
-      success: true,
-      product: formattedProduct,
-      message: "Product updated successfully"
-    })
+//     const updateData: any = { updatedAt: new Date() }
+    
+//     // ✅ EXISTING STOCK FIELDS
+//     if (inStock !== undefined) {
+//       updateData.inStock = Boolean(inStock)
+//     }
+    
+//     if (stock !== undefined) {
+//       const stockValue = parseInt(stock)
+//       updateData.stock = stockValue
+//       if (inStock === undefined) {
+//         updateData.inStock = stockValue > 0
+//       }
+//     }
 
-  } catch (error: any) {
-    console.error("❌ Product update error:", error)
-    return NextResponse.json({
-      success: false,
-      error: error.message || "Internal server error"
-    }, { status: 500 })
-  }
-}
+//     // ✅ ADD NEW FIELDS HANDLING
+//     if (body.freeShipping !== undefined) {
+//       updateData.freeShipping = Boolean(body.freeShipping)
+//     }
+//     if (typeof body.warrantyPeriod === 'string') {
+//       updateData.warrantyPeriod = body.warrantyPeriod.trim()
+//     }
+//     if (typeof body.warrantyType === 'string') {
+//       updateData.warrantyType = body.warrantyType.trim()
+//     }
+//     if (body.deliveryLocations !== undefined) {
+//       updateData.deliveryLocations = Array.isArray(body.deliveryLocations) ? body.deliveryLocations : []
+//     }
+//     if (typeof body.deliveryTime === 'string') {
+//       updateData.deliveryTime = body.deliveryTime.trim()
+//     }
+
+//     const updatedProduct = await Product.findByIdAndUpdate(
+//       productId,
+//       updateData,
+//       { new: true, runValidators: true }
+//     )
+
+//     if (!updatedProduct) {
+//       return NextResponse.json({
+//         success: false,
+//         error: "Failed to update product"
+//       }, { status: 500 })
+//     }
+
+//     const safeSpecifications = updatedProduct.specifications && typeof updatedProduct.specifications === 'object' 
+//       ? updatedProduct.specifications 
+//       : {}
+
+//     // ✅ UPDATE FORMATTED PRODUCT WITH NEW FIELDS
+//     const formattedProduct = {
+//       _id: updatedProduct._id,
+//       name: updatedProduct.name,
+//       price: updatedProduct.price,
+//       originalPrice: updatedProduct.originalPrice,
+//       category: updatedProduct.category.toUpperCase(),
+//       subcategory: updatedProduct.subcategory,
+//       images: updatedProduct.images,
+//       description: updatedProduct.description,
+//       status: updatedProduct.status,
+//       inStock: updatedProduct.inStock,
+//       stock: updatedProduct.stock,
+//       seller: updatedProduct.seller,
+//       specifications: safeSpecifications,
+//       // ✅ ADD NEW FIELDS TO RESPONSE
+//       deliveryLocations: updatedProduct.deliveryLocations || [],
+//       deliveryTime: updatedProduct.deliveryTime || "",
+//       freeShipping: updatedProduct.freeShipping || false,
+//       warrantyPeriod: updatedProduct.warrantyPeriod || '',
+//       warrantyType: updatedProduct.warrantyType || '',
+//       createdAt: updatedProduct.createdAt,
+//       updatedAt: updatedProduct.updatedAt
+//     }
+
+//     return NextResponse.json({
+//       success: true,
+//       product: formattedProduct,
+//       message: "Product updated successfully"
+//     })
+
+//   } catch (error: any) {
+//     console.error("❌ Product update error:", error)
+//     return NextResponse.json({
+//       success: false,
+//       error: error.message || "Internal server error"
+//     }, { status: 500 })
+//   }
+// }
 // // PATCH update product stock
 // export async function PATCH(req: Request) {
 //   try {

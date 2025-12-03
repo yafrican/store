@@ -200,8 +200,7 @@ export async function DELETE(
     }, { status: 500 })
   }
 }
-
-// PATCH update product fields (seller-owned) - FIXED
+// PATCH update product fields - UPDATED FOR VARIABLE PRODUCTS
 export async function PATCH(
   req: Request,
   { params }: RouteParams
@@ -209,7 +208,6 @@ export async function PATCH(
   try {
     console.log('🔄 PATCH update product for seller...')
     
-    // ✅ FIXED: Await the params
     const { id } = await params
     const payload = verifyToken(req)
     await connectMongo()
@@ -219,37 +217,76 @@ export async function PATCH(
 
     const update: any = { updatedAt: new Date() }
 
-    if (typeof body.name === 'string') update.name = body.name.trim()
-    if (body.price !== undefined) update.price = parseFloat(body.price)
-    if (typeof body.category === 'string') update.category = body.category.trim()
-    if (typeof body.subcategory === 'string') update.subcategory = body.subcategory.trim()
-    if (typeof body.description === 'string') update.description = body.description.trim()
-    if (body.stock !== undefined) {
-      const stockVal = parseInt(body.stock)
-      update.stock = stockVal
-      if (body.inStock === undefined) update.inStock = stockVal > 0
+    // Basic fields
+    const basicFields = [
+      'name', 'price', 'originalPrice', 'category', 'subcategory', 'description',
+      'specifications', 'productType'
+    ]
+    
+    basicFields.forEach(field => {
+      if (body[field] !== undefined) {
+        if (typeof body[field] === 'string') {
+          update[field] = body[field].trim()
+        } else {
+          update[field] = body[field]
+        }
+      }
+    })
+
+    // Stock handling based on product type
+    if (body.productType === 'simple') {
+      if (body.stock !== undefined) {
+        const stockVal = parseInt(body.stock)
+        update.stock = stockVal
+        update.inStock = body.inStock !== undefined ? Boolean(body.inStock) : stockVal > 0
+        
+        // Clear variable product fields if switching from variable to simple
+        update.attributes = []
+        update.variations = []
+      }
+    } else if (body.productType === 'variable') {
+      // Handle variable product updates
+      if (body.attributes !== undefined) {
+        update.attributes = body.attributes
+      }
+      
+      if (body.variations !== undefined) {
+        update.variations = body.variations
+        
+        // Calculate total stock and inStock status
+        const totalStock = body.variations.reduce((total: number, v: any) => 
+          total + parseInt(v.stock || '0'), 0)
+        const hasStock = body.variations.some((v: any) => parseInt(v.stock || '0') > 0)
+        
+        update.stock = 0 // Main stock is 0 for variable products
+        update.totalStock = totalStock
+        update.inStock = hasStock
+      }
     }
-    if (body.inStock !== undefined) update.inStock = Boolean(body.inStock)
-    // ✅ Add delivery fields handling
-if (body.deliveryLocations !== undefined) {
-  update.deliveryLocations = Array.isArray(body.deliveryLocations) ? body.deliveryLocations : []
-}
-if (typeof body.deliveryTime === 'string') {
-  update.deliveryTime = body.deliveryTime.trim()
-}
-// ✅ ADD FREE SHIPPING & WARRANTY FIELDS HANDLING
+
+    // Additional fields
+    if (body.inStock !== undefined) {
+      update.inStock = Boolean(body.inStock)
+    }
+    
+    if (body.deliveryLocations !== undefined) {
+      update.deliveryLocations = Array.isArray(body.deliveryLocations) ? body.deliveryLocations : []
+    }
+    
+    if (typeof body.deliveryTime === 'string') {
+      update.deliveryTime = body.deliveryTime.trim()
+    }
+    
     if (body.freeShipping !== undefined) {
       update.freeShipping = Boolean(body.freeShipping)
     }
+    
     if (typeof body.warrantyPeriod === 'string') {
       update.warrantyPeriod = body.warrantyPeriod.trim()
     }
+    
     if (typeof body.warrantyType === 'string') {
       update.warrantyType = body.warrantyType.trim()
-    }
-    // ✅ FIX: Handle specifications update
-    if (body.specifications !== undefined) {
-      update.specifications = body.specifications
     }
 
     const updated = await Product.findOneAndUpdate(
@@ -277,15 +314,19 @@ if (typeof body.deliveryTime === 'string') {
         subcategory: updated.subcategory || '',
         images: updated.images || [],
         description: updated.description || '',
+        productType: updated.productType || 'simple',
         status: updated.status || 'pending',
         inStock: updated.inStock,
         stock: updated.stock || 0,
-        deliveryLocations: updated.deliveryLocations || [], // ✅ Add this
-    deliveryTime: updated.deliveryTime || '', // ✅ Add this
-    freeShipping: updated.freeShipping || false,
+        totalStock: updated.totalStock || (updated.productType === 'simple' ? updated.stock : 0),
+        deliveryLocations: updated.deliveryLocations || [],
+        deliveryTime: updated.deliveryTime || '',
+        freeShipping: updated.freeShipping || false,
         warrantyPeriod: updated.warrantyPeriod || '',
         warrantyType: updated.warrantyType || '',
         specifications: updated.specifications || {},
+        attributes: updated.attributes || [],
+        variations: updated.variations || [],
         createdAt: updated.createdAt,
         updatedAt: updated.updatedAt
       }
@@ -300,3 +341,102 @@ if (typeof body.deliveryTime === 'string') {
     }, { status })
   }
 }
+// // PATCH update product fields (seller-owned) - FIXED
+// export async function PATCH(
+//   req: Request,
+//   { params }: RouteParams
+// ) {
+//   try {
+//     console.log('🔄 PATCH update product for seller...')
+    
+//     // ✅ FIXED: Await the params
+//     const { id } = await params
+//     const payload = verifyToken(req)
+//     await connectMongo()
+
+//     const body = await req.json()
+//     console.log('🔍 Updating product with data:', { productId: id, updateData: body })
+
+//     const update: any = { updatedAt: new Date() }
+
+//     if (typeof body.name === 'string') update.name = body.name.trim()
+//     if (body.price !== undefined) update.price = parseFloat(body.price)
+//     if (typeof body.category === 'string') update.category = body.category.trim()
+//     if (typeof body.subcategory === 'string') update.subcategory = body.subcategory.trim()
+//     if (typeof body.description === 'string') update.description = body.description.trim()
+//     if (body.stock !== undefined) {
+//       const stockVal = parseInt(body.stock)
+//       update.stock = stockVal
+//       if (body.inStock === undefined) update.inStock = stockVal > 0
+//     }
+//     if (body.inStock !== undefined) update.inStock = Boolean(body.inStock)
+//     // ✅ Add delivery fields handling
+// if (body.deliveryLocations !== undefined) {
+//   update.deliveryLocations = Array.isArray(body.deliveryLocations) ? body.deliveryLocations : []
+// }
+// if (typeof body.deliveryTime === 'string') {
+//   update.deliveryTime = body.deliveryTime.trim()
+// }
+// // ✅ ADD FREE SHIPPING & WARRANTY FIELDS HANDLING
+//     if (body.freeShipping !== undefined) {
+//       update.freeShipping = Boolean(body.freeShipping)
+//     }
+//     if (typeof body.warrantyPeriod === 'string') {
+//       update.warrantyPeriod = body.warrantyPeriod.trim()
+//     }
+//     if (typeof body.warrantyType === 'string') {
+//       update.warrantyType = body.warrantyType.trim()
+//     }
+//     // ✅ FIX: Handle specifications update
+//     if (body.specifications !== undefined) {
+//       update.specifications = body.specifications
+//     }
+
+//     const updated = await Product.findOneAndUpdate(
+//       { _id: id, seller: payload.id },
+//       update,
+//       { new: true }
+//     )
+
+//     if (!updated) {
+//       return NextResponse.json({ 
+//         success: false,
+//         error: 'Product not found' 
+//       }, { status: 404 })
+//     }
+
+//     console.log('✅ Product updated successfully:', updated.name)
+
+//     return NextResponse.json({
+//       success: true,
+//       product: {
+//         _id: updated._id,
+//         name: updated.name,
+//         price: updated.price,
+//         category: updated.category,
+//         subcategory: updated.subcategory || '',
+//         images: updated.images || [],
+//         description: updated.description || '',
+//         status: updated.status || 'pending',
+//         inStock: updated.inStock,
+//         stock: updated.stock || 0,
+//         deliveryLocations: updated.deliveryLocations || [], // ✅ Add this
+//     deliveryTime: updated.deliveryTime || '', // ✅ Add this
+//     freeShipping: updated.freeShipping || false,
+//         warrantyPeriod: updated.warrantyPeriod || '',
+//         warrantyType: updated.warrantyType || '',
+//         specifications: updated.specifications || {},
+//         createdAt: updated.createdAt,
+//         updatedAt: updated.updatedAt
+//       }
+//     })
+//   } catch (error: any) {
+//     console.error("❌ PATCH product error:", error)
+//     const message = error.message || 'Server error'
+//     const status = message === 'Not authenticated' ? 401 : message === 'Access denied' ? 403 : 500
+//     return NextResponse.json({ 
+//       success: false,
+//       error: message 
+//     }, { status })
+//   }
+// }

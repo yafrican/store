@@ -3,8 +3,7 @@ import connectMongo from '@/lib/mongodb'
 import Product from '@/models/Product'
 import User from '@/models/User' // Import User model
 import { ObjectId } from 'mongodb'
-
-// GET product by ID or slug with proper CDN image handling
+// GET product by ID or slug - UPDATED FOR VARIABLE PRODUCTS
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -18,28 +17,25 @@ export async function GET(
 
     console.log('🔄 Fetching product:', id)
     
-    // Connect to MongoDB
     await connectMongo()
 
     let product
 
-    // Try to find by MongoDB ObjectId first
     if (ObjectId.isValid(id)) {
       console.log('🔍 Searching by ObjectId...')
       product = await Product.findById(id).populate({
         path: 'seller',
         select: 'name email storeName phone',
-        model: User // Use the imported User model directly
+        model: User
       })
     }
 
-    // If not found by ID, try by slug
     if (!product) {
       console.log('🔍 Searching by slug...')
       product = await Product.findOne({ slug: id }).populate({
         path: 'seller',
         select: 'name email storeName phone',
-        model: User // Use the imported User model directly
+        model: User
       })
     }
 
@@ -56,55 +52,63 @@ export async function GET(
       images = product.images
     } else if (typeof product.images === 'string') {
       images = [product.images]
-    } else if (product.image) { // Fallback to single image field
+    } else if (product.image) {
       images = [product.image]
     }
 
-    // Process images for CDN - ensure absolute URLs
     const processedImages = images.map((img: string) => {
       if (!img) return ''
-      
-      // If already absolute URL (CDN), return as is
-      if (img.startsWith('http')) {
-        return img
-      }
-      
-      // If relative path, construct absolute URL
+      if (img.startsWith('http')) return img
       if (img.startsWith('/')) {
         return `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}${img}`
       }
-      
-      // For CDN paths without protocol, add https
-      if (img.startsWith('//')) {
-        return `https:${img}`
-      }
-      
+      if (img.startsWith('//')) return `https:${img}`
       return img
     }).filter((img: string) => img !== '')
 
-    const processedProduct = {
+    // Calculate total stock
+    let totalStock = product.stock || 0
+    if (product.productType === 'variable' && product.variations) {
+      totalStock = product.variations.reduce((total: number, v: any) => total + (v.stock || 0), 0)
+    }
+
+    const processedProduct: any = {
       ...product.toObject(),
       _id: product._id.toString(),
       images: processedImages,
-            deliveryLocations: product.deliveryLocations || [],
-  deliveryTime: product.deliveryTime || 'Contact seller for delivery time', // ✅ ADD THIS
-  freeShipping: product.freeShipping || false,
-  warrantyPeriod: product.warrantyPeriod || '',
-  warrantyType: product.warrantyType || '',
-      // Ensure compatibility fields
-      image: processedImages[0] || '', // For WishlistContext compatibility
-      isDemo: false, // Mark as real product
+      deliveryLocations: product.deliveryLocations || [],
+      deliveryTime: product.deliveryTime || 'Contact seller for delivery time',
+      freeShipping: product.freeShipping || false,
+      warrantyPeriod: product.warrantyPeriod || '',
+      warrantyType: product.warrantyType || '',
+      productType: product.productType || 'simple',
+      totalStock: totalStock,
+      image: processedImages[0] || '',
+      isDemo: false,
+    }
+
+    // Add variable product data
+    if (product.productType === 'variable') {
+      processedProduct.attributes = product.attributes || []
+      processedProduct.variations = product.variations || []
+      
+      // Calculate price range
+      if (product.variations && product.variations.length > 0) {
+        const prices = product.variations.map((v: any) => v.price || product.price)
+        processedProduct.lowestPrice = Math.min(...prices)
+        processedProduct.highestPrice = Math.max(...prices)
+        processedProduct.priceRange = {
+          lowest: Math.min(...prices),
+          highest: Math.max(...prices)
+        }
+      }
     }
 
     console.log('📦 Processed product:', {
       name: processedProduct.name,
-      imagesCount: processedProduct.images.length,
-      firstImage: processedProduct.images[0]?.substring(0, 50) + '...',
-      seller: processedProduct.seller?.storeName || 'No seller',
-      deliveryLocationsCount: processedProduct.deliveryLocations?.length || 0 ,// ✅ Add this log
-freeShipping: processedProduct.freeShipping,
-  warrantyPeriod: processedProduct.warrantyPeriod,
-  warrantyType: processedProduct.warrantyType
+      productType: processedProduct.productType,
+      variationsCount: processedProduct.variations?.length || 0,
+      totalStock: processedProduct.totalStock
     })
 
     return NextResponse.json(processedProduct)
@@ -113,6 +117,115 @@ freeShipping: processedProduct.freeShipping,
     return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 })
   }
 }
+// GET product by ID or slug with proper CDN image handling
+// export async function GET(
+//   request: Request,
+//   { params }: { params: Promise<{ id: string }> }
+// ) {
+//   try {
+//     const { id } = await params
+
+//     if (!id) {
+//       return NextResponse.json({ error: 'Missing ID parameter' }, { status: 400 })
+//     }
+
+//     console.log('🔄 Fetching product:', id)
+    
+//     // Connect to MongoDB
+//     await connectMongo()
+
+//     let product
+
+//     // Try to find by MongoDB ObjectId first
+//     if (ObjectId.isValid(id)) {
+//       console.log('🔍 Searching by ObjectId...')
+//       product = await Product.findById(id).populate({
+//         path: 'seller',
+//         select: 'name email storeName phone',
+//         model: User // Use the imported User model directly
+//       })
+//     }
+
+//     // If not found by ID, try by slug
+//     if (!product) {
+//       console.log('🔍 Searching by slug...')
+//       product = await Product.findOne({ slug: id }).populate({
+//         path: 'seller',
+//         select: 'name email storeName phone',
+//         model: User // Use the imported User model directly
+//       })
+//     }
+
+//     if (!product) {
+//       return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+//     }
+
+//     console.log('✅ Product found:', product.name)
+
+//     // Process images for CDN
+//     let images: string[] = []
+    
+//     if (Array.isArray(product.images)) {
+//       images = product.images
+//     } else if (typeof product.images === 'string') {
+//       images = [product.images]
+//     } else if (product.image) { // Fallback to single image field
+//       images = [product.image]
+//     }
+
+//     // Process images for CDN - ensure absolute URLs
+//     const processedImages = images.map((img: string) => {
+//       if (!img) return ''
+      
+//       // If already absolute URL (CDN), return as is
+//       if (img.startsWith('http')) {
+//         return img
+//       }
+      
+//       // If relative path, construct absolute URL
+//       if (img.startsWith('/')) {
+//         return `${process.env.NEXTAUTH_URL || 'http://localhost:3000'}${img}`
+//       }
+      
+//       // For CDN paths without protocol, add https
+//       if (img.startsWith('//')) {
+//         return `https:${img}`
+//       }
+      
+//       return img
+//     }).filter((img: string) => img !== '')
+
+//     const processedProduct = {
+//       ...product.toObject(),
+//       _id: product._id.toString(),
+//       images: processedImages,
+//             deliveryLocations: product.deliveryLocations || [],
+//   deliveryTime: product.deliveryTime || 'Contact seller for delivery time', // ✅ ADD THIS
+//   freeShipping: product.freeShipping || false,
+//   warrantyPeriod: product.warrantyPeriod || '',
+//   warrantyType: product.warrantyType || '',
+//       // Ensure compatibility fields
+//       image: processedImages[0] || '', // For WishlistContext compatibility
+//       isDemo: false, // Mark as real product
+//     }
+
+//     console.log('📦 Processed product:', {
+//       name: processedProduct.name,
+//       imagesCount: processedProduct.images.length,
+//       firstImage: processedProduct.images[0]?.substring(0, 50) + '...',
+//       seller: processedProduct.seller?.storeName || 'No seller',
+//       deliveryLocationsCount: processedProduct.deliveryLocations?.length || 0 ,// ✅ Add this log
+// freeShipping: processedProduct.freeShipping,
+//   warrantyPeriod: processedProduct.warrantyPeriod,
+//   warrantyType: processedProduct.warrantyType
+//     })
+
+//     return NextResponse.json(processedProduct)
+//   } catch (error) {
+//     console.error('❌ Error fetching product:', error)
+//     return NextResponse.json({ error: 'Failed to fetch product' }, { status: 500 })
+//   }
+// }
 // import { NextResponse } from 'next/server'
 // import connectMongo from '@/lib/mongodb'
 // import Product from '@/models/Product'

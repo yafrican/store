@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import connectMongo from '@/lib/mongodb'
 import Product from '@/models/Product'
 // ---------------- GET: fetch all products ----------------
+// GET: fetch all products - UPDATED FOR VARIABLE PRODUCTS
 export async function GET(request: Request) {
   try {
     console.log('🚀 Starting GET /api/products...')
@@ -10,38 +11,80 @@ export async function GET(request: Request) {
     console.log('✅ MongoDB connected for GET')
 
     const products = await Product.find({ 
-      status: { $ne: 'rejected' }
-    })
+  status: 'approved', // ✅ Only show approved products
+  inStock: true // Optional: Also filter by inStock
+
+})
     .select('-__v')
     .sort({ createdAt: -1 })
     .lean()
 
     console.log(`✅ Found ${products.length} products`)
 
-    const transformedProducts = products.map(product => ({
-      _id: product._id.toString(),
-      id: product._id.toString(),
-      name: product.name,
-      price: product.price,
-      originalPrice: product.originalPrice || product.price,
-      images: product.images || [],
-      image: product.images?.[0] || '',
-      slug: product.slug,
-      category: product.category,
-      stock: product.stock,
-      inStock: product.inStock,
-      isNew: product.isNew || false,
-      isOnSale: product.originalPrice && product.originalPrice > product.price,
-      salePrice: product.originalPrice && product.originalPrice > product.price ? product.price : undefined,
-      discountPercentage: product.originalPrice && product.originalPrice > product.price 
-        ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
-        : 0,
-      rating: product.rating || Math.random() * 2 + 3,
-      reviews: product.reviews || Math.floor(Math.random() * 500) + 10,
-      freeShipping: product.freeShipping || false,
-      deliveryTime: product.deliveryTime,
-      status: product.status,
-    }))
+    const transformedProducts = products.map((product: any) => {
+      // Calculate stock for variable products
+      let totalStock = product.stock || 0
+      let hasStock = product.stock > 0
+      
+      if (product.productType === 'variable' && product.variations) {
+        totalStock = product.variations.reduce((total: number, v: any) => total + (v.stock || 0), 0)
+        hasStock = product.variations.some((v: any) => v.stock > 0)
+      }
+
+      const inStock = product.inStock !== undefined ? product.inStock && hasStock : hasStock
+      
+      const baseProduct = {
+        _id: product._id.toString(),
+        id: product._id.toString(),
+        name: product.name,
+        price: product.price,
+        originalPrice: product.originalPrice || product.price,
+        images: product.images || [],
+        image: product.images?.[0] || '',
+        slug: product.slug,
+        category: product.category,
+        productType: product.productType || 'simple',
+        stock: product.stock,
+        totalStock: totalStock,
+        inStock: inStock,
+        isNew: product.isNew || false,
+        isOnSale: product.originalPrice && product.originalPrice > product.price,
+        salePrice: product.originalPrice && product.originalPrice > product.price ? product.price : undefined,
+        discountPercentage: product.originalPrice && product.originalPrice > product.price 
+          ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+          : 0,
+        rating: product.rating || Math.random() * 2 + 3,
+        reviews: product.reviews || Math.floor(Math.random() * 500) + 10,
+        freeShipping: product.freeShipping || false,
+        deliveryTime: product.deliveryTime,
+        status: product.status,
+      }
+
+      // Add variable product specific fields
+      if (product.productType === 'variable') {
+        // Calculate price range
+        let lowestPrice = product.price
+        let highestPrice = product.price
+        
+        if (product.variations && product.variations.length > 0) {
+          const prices = product.variations.map((v: any) => v.price || product.price)
+          lowestPrice = Math.min(...prices)
+          highestPrice = Math.max(...prices)
+        }
+
+        return {
+          ...baseProduct,
+          priceRange: {
+            lowest: lowestPrice,
+            highest: highestPrice
+          },
+          variationsCount: product.variations?.length || 0,
+          hasVariations: true
+        }
+      }
+
+      return baseProduct
+    })
 
     return NextResponse.json(transformedProducts)
 
@@ -57,6 +100,61 @@ export async function GET(request: Request) {
     )
   }
 }
+// export async function GET(request: Request) {
+//   try {
+//     console.log('🚀 Starting GET /api/products...')
+    
+//     await connectMongo()
+//     console.log('✅ MongoDB connected for GET')
+
+//     const products = await Product.find({ 
+//       status: { $ne: 'rejected' }
+//     })
+//     .select('-__v')
+//     .sort({ createdAt: -1 })
+//     .lean()
+
+//     console.log(`✅ Found ${products.length} products`)
+
+//     const transformedProducts = products.map(product => ({
+//       _id: product._id.toString(),
+//       id: product._id.toString(),
+//       name: product.name,
+//       price: product.price,
+//       originalPrice: product.originalPrice || product.price,
+//       images: product.images || [],
+//       image: product.images?.[0] || '',
+//       slug: product.slug,
+//       category: product.category,
+//       stock: product.stock,
+//       inStock: product.inStock,
+//       isNew: product.isNew || false,
+//       isOnSale: product.originalPrice && product.originalPrice > product.price,
+//       salePrice: product.originalPrice && product.originalPrice > product.price ? product.price : undefined,
+//       discountPercentage: product.originalPrice && product.originalPrice > product.price 
+//         ? Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100)
+//         : 0,
+//       rating: product.rating || Math.random() * 2 + 3,
+//       reviews: product.reviews || Math.floor(Math.random() * 500) + 10,
+//       freeShipping: product.freeShipping || false,
+//       deliveryTime: product.deliveryTime,
+//       status: product.status,
+//     }))
+
+//     return NextResponse.json(transformedProducts)
+
+//   } catch (error: any) {
+//     console.error('❌ GET /api/products error:', error)
+    
+//     return NextResponse.json(
+//       { 
+//         error: 'Failed to fetch products',
+//         details: error.message 
+//       },
+//       { status: 500 }
+//     )
+//   }
+// }
 // ---------------- POST: create a new product ----------------
 export async function POST(request: Request) {
   try {
